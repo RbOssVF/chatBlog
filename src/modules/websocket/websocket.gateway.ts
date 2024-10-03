@@ -30,4 +30,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     handleError(client: Socket, error: Error) {
         console.error(`Error en la conexión: ${error.message}`);
     }
+    EnviarNotificaciones(jsonNotificaciones: any) {
+        this.server.emit('nuevoUsuario', jsonNotificaciones);
+    }
 }

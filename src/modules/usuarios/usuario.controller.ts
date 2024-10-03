@@ -7,6 +7,8 @@ import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
 import * as jwt from 'jsonwebtoken';
 import { JwtAuthGuard } from '../../jwt-auth.guard'
+import { WebsocketGateway } from '../websocket/websocket.gateway';
+import { timeout } from 'rxjs';
 
 @Injectable() // Servicio y controlador en un solo archivo
 @Controller('usuarios') // Ruta base: /usuarios
@@ -17,6 +19,8 @@ export class UsuarioController {
 
     @InjectRepository(Rol)  // Inyectar el repositorio de Rol
     private readonly rolRepository: Repository<Rol>,
+
+    private readonly websocketGateway: WebsocketGateway
   ) {}
 
   // Servicio: Obtener todos los usuarios
@@ -68,7 +72,8 @@ export class UsuarioController {
       email: string,
       clave: string,
       rolId: number
-    }) {
+    }
+  ) {
     try {
       // Hashear la contraseña
       const hashedPassword = await bcrypt.hash(datosUsuario.clave, 10);
@@ -78,7 +83,10 @@ export class UsuarioController {
         where: { email: datosUsuario.email },
       });
 
+      let jsonMensaje = {};
+
       if (usuarioExistente) {
+
         return {
           estado: false,
           message: `El usuario con correo ${datosUsuario.email} ya existe.`,
@@ -91,6 +99,7 @@ export class UsuarioController {
       });
 
       if (!rolEncontrado) {
+
         return {
           estado: false,
           message: `El rol con ID ${datosUsuario.rolId} no existe.`,
@@ -109,6 +118,9 @@ export class UsuarioController {
 
       // Guardar el nuevo usuario en la base de datos
       const usuarioGuardado = await this.usuarioRepository.save(nuevoUsuario);
+
+      //Uso de Websocket
+      // this.websocketGateway.EnviarNotificaciones(jsonMensaje);
 
       return {
         estado: true,

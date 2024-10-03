@@ -4,11 +4,13 @@ import { Usuario } from '../../entidades/usuario.entity';
 import { Rol } from '../../entidades/rol.entity';
 import { UsuarioController } from './usuario.controller';
 import { RolController } from './rol.controller'
+import { WebsocketGateway } from '../websocket/websocket.gateway';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Usuario, Rol]),
   ], // Importamos el entity Usuario
   controllers: [UsuarioController, RolController],
+  providers: [WebsocketGateway]
 })
 export class UsuarioModule {}
