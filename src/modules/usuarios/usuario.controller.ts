@@ -90,6 +90,7 @@ export class UsuarioController {
         return {
           estado: false,
           message: `El usuario con correo ${datosUsuario.email} ya existe.`,
+          icono: 'warning',
         };
       }
 
@@ -103,6 +104,7 @@ export class UsuarioController {
         return {
           estado: false,
           message: `El rol con ID ${datosUsuario.rolId} no existe.`,
+          icono: 'warning',
         };
       }
 
@@ -125,11 +127,13 @@ export class UsuarioController {
       return {
         estado: true,
         message: `Usuario ${usuarioGuardado.apellidos} ${usuarioGuardado.nombres} registrado exitosamente.`,
+        icono: 'success',
       };
     } catch (error) {
       return {
         estado: false,
         message: `Error al registrar usuario: ${error.message}`,
+        icono: 'error',
       };
     }
   }
@@ -149,6 +153,7 @@ export class UsuarioController {
         return res.status(HttpStatus.NOT_FOUND).json({
           estado: false,
           message: `El usuario ${datosUsuario.email} no existe`,
+          icono: 'warning',
         });
       }
 
@@ -161,6 +166,7 @@ export class UsuarioController {
         return res.status(HttpStatus.NOT_FOUND).json({
           estado: false,
           message: `La contraseña es incorrecta`,
+          icono: 'warning',
         });
       }
 
@@ -174,11 +180,13 @@ export class UsuarioController {
         estado: true,
         token,
         message: `Usuario ${usuario.apellidos} ${usuario.nombres} autenticado exitosamente`,
+        icono: 'success',
       });
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         estado: false,
         message: `Error al autenticar usuario: ${error.message}`,
+        icono: 'error',
       });
     }
   }
