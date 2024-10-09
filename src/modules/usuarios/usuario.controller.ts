@@ -1,4 +1,4 @@
-import { Controller, Get, Injectable, Post, Body, Res, HttpStatus, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Injectable, Post, Body, Res, HttpStatus, Param, UseGuards, Req } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Usuario } from '../../entidades/usuario.entity';
@@ -6,7 +6,7 @@ import { Rol } from '../../entidades/rol.entity';
 import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
 import * as jwt from 'jsonwebtoken';
-import { JwtAuthGuard } from '../../jwt-auth.guard'
+import { JwtAuthGuard } from '../jwt/jwt-auth.guard'
 import { WebsocketGateway } from '../websocket/websocket.gateway';
 import { timeout } from 'rxjs';
 
@@ -30,7 +30,7 @@ export class UsuarioController {
 
   // Controlador: Ruta GET para todos los usuarios
   @Get('listaUsuarios')
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   async getAll() {
     const all_usuarios = await this.findAll();
   
@@ -71,7 +71,8 @@ export class UsuarioController {
       apellidos: string,
       email: string,
       clave: string,
-      rolId: number
+      rolId: number,
+      nombreUsuario: string
     }
   ) {
     try {
@@ -83,7 +84,23 @@ export class UsuarioController {
         where: { email: datosUsuario.email },
       });
 
-      let jsonMensaje = {};
+      const nombreUsuarioExistente = await this.usuarioRepository.findOne({
+        where: { nombreUsuario: datosUsuario.nombreUsuario },
+      })
+
+      let existeIp = false;
+      let ipUsuario = '';
+
+      while (!existeIp) {
+        ipUsuario = generarIpUsuario();  // Llamar a la función para generar la IP
+        const verificarIpUsuario = await this.usuarioRepository.findOne({
+          where: { ipUser: ipUsuario },
+        });
+        if (!verificarIpUsuario) {
+          existeIp = true;  // Si la IP no existe en la base de datos, usarla
+        }
+      }
+      // let jsonMensaje = {};
 
       if (usuarioExistente) {
 
@@ -94,13 +111,19 @@ export class UsuarioController {
         };
       }
 
+      if (nombreUsuarioExistente) {
+        return {
+          estado: false,
+          message: `El usuario con nombre de usuario ${datosUsuario.nombreUsuario} ya existe.`,
+          icono: 'warning',
+        }
+      }
       // Comprobar si el rol existe
       const rolEncontrado = await this.rolRepository.findOne({
         where: { id: datosUsuario.rolId },
       });
 
       if (!rolEncontrado) {
-
         return {
           estado: false,
           message: `El rol con ID ${datosUsuario.rolId} no existe.`,
@@ -115,6 +138,8 @@ export class UsuarioController {
         email: datosUsuario.email,
         clave: hashedPassword,
         fechaCreacion: new Date(),
+        ipUser : ipUsuario,
+        nombreUsuario : datosUsuario.nombreUsuario,
         rol: rolEncontrado, // Asignar el rol encontrado
       });
 
@@ -142,11 +167,14 @@ export class UsuarioController {
   async loginUsuario(
     @Res() res: Response,
     @Body() datosUsuario: { email: string, clave: string }
-  ) 
-  {
+  ) {
     try {
+      // Buscar el usuario por correo o por nombre de usuario
       const usuario = await this.usuarioRepository.findOne({
-        where: { email: datosUsuario.email },
+        where: [
+          { email: datosUsuario.email },  // Buscar por correo electrónico
+          { nombreUsuario: datosUsuario.email }  // Buscar por nombre de usuario
+        ],
       });
 
       if (!usuario) {
@@ -157,6 +185,7 @@ export class UsuarioController {
         });
       }
 
+      // Verificar si la contraseña es correcta
       const v_contraseña = await bcrypt.compare(
         datosUsuario.clave,
         usuario.clave,
@@ -165,20 +194,25 @@ export class UsuarioController {
       if (!v_contraseña) {
         return res.status(HttpStatus.NOT_FOUND).json({
           estado: false,
-          message: `La contraseña es incorrecta`,
+          message: `La contraseña es incorrecta`,
           icono: 'warning',
         });
       }
 
+      // Generar el token JWT
       const token = jwt.sign(
-        { id: usuario.id, email: usuario.email }, // Payload con datos del usuario
-        process.env.JWT_SECRET || 'nestBlog2024.', // Llave secreta para firmar el token
-        { expiresIn: '1h' } // El token expirará en 1 hora
+        { id: usuario.id, email: usuario.email },  // Datos del payload del token
+        process.env.JWT_SECRET || 'nestBlog2024.', // Llave secreta
+        { expiresIn: '1h' }  // Expiración del token
       );
+
+      // Enviar el token en una cookie segura
+      res.cookie('token', token, { httpOnly: true, secure: false });  // Puedes usar secure: true en producción
 
       return res.status(HttpStatus.OK).json({
         estado: true,
-        token,
+        usuarioId: usuario.id,
+        token,  // Solo si quieres enviar también el token en el JSON (por ejemplo, para apps móviles)
         message: `Usuario ${usuario.apellidos} ${usuario.nombres} autenticado exitosamente`,
         icono: 'success',
       });
@@ -191,15 +225,15 @@ export class UsuarioController {
     }
   }
 
-  @Get('obtenerUsuario/:idUsuario')
-  async obtenerUsuario(
-    @Param('idUsuario') idUsuario: number, 
-    @Res() res: Response
-  ) 
-  {
+  @Get('obtenerUsuario')
+  @UseGuards(JwtAuthGuard)
+  async obtenerUsuario(@Req() req: any, @Res() res: Response) {
     try {
+      // El 'id' del usuario lo obtienes desde el token, que está disponible en req.usuario
+      const usuarioId = req.usuario.id;
+
       const g_usuario = await this.usuarioRepository.findOne({
-        where: { id: idUsuario },
+        where: { id: usuarioId },
         relations: ['rol'],
       });
 
@@ -208,13 +242,15 @@ export class UsuarioController {
           estado: false,
           message: `El usuario no existe`,
         });
-      } 
+      }
 
       const usuario = {
         id: g_usuario.id,
         nombres: g_usuario.nombres,
         apellidos: g_usuario.apellidos,
         email: g_usuario.email,
+        nombreUsuario: g_usuario.nombreUsuario,
+        ipUser: g_usuario.ipUser,
         rol: g_usuario.rol.nombre,
       };
 
@@ -227,7 +263,7 @@ export class UsuarioController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         estado: false,
         message: `Error al obtener usuario: ${error.message}`,
-      })
+      });
     }
   }
 
@@ -282,4 +318,39 @@ export class UsuarioController {
       });
     }
   }
+
+  // @Post('registrarPerfil')
+  // @UseGuards(JwtAuthGuard)
+  // async registrarPerfil(
+  //   @Body() datosUsuario: { perfil ?: file },
+  //   @Req() req: any,
+  //   @Res() res: Response
+  // ) 
+  // {
+  //   try {
+      
+  //   } catch (error) {
+  //     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+  //       estado: false,
+  //       message: `Error al registrar el Perfil: ${error.message}`,
+  //     });
+  //   }
+  // }
+    
+
+  @Post('logout')
+  async logout(@Res() res: Response) {
+    res.clearCookie('token');  // Limpiar la cookie que contiene el token
+    return res.status(200).json({
+      estado: true,
+      message: 'Sesión cerrada correctamente',
+      icono: 'success',
+    });
+  }
+}
+
+function generarIpUsuario() {
+  // Generar un número aleatorio de 8 dígitos
+  const ipUsuario = Math.floor(10000000 + Math.random() * 90000000); 
+  return ipUsuario.toString(); // Devolverlo como string si prefieres
 }

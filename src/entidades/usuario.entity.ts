@@ -7,6 +7,12 @@ export class Usuario {
   id: number;
 
   @Column()
+  ipUser: string;
+
+  @Column()
+  nombreUsuario: string;
+
+  @Column()
   nombres: string;
 
   @Column()

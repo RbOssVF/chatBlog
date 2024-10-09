@@ -2,14 +2,7 @@ import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDiscon
 import { Server, Socket } from 'socket.io';
 
 //habilitar cors websocket
-@WebSocketGateway({
-    cors: {
-      origin: '*', // O limita a tu dominio
-      methods: ['GET', 'POST'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
-      credentials: true
-    }
-})
+@WebSocketGateway()
 
 export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer() server: Server;

@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Rol } from '../../entidades/rol.entity';
 import { Usuario } from '../../entidades/usuario.entity';
 import { Response } from 'express';
-import { JwtAuthGuard } from '../../jwt-auth.guard'
+import { JwtAuthGuard } from '../jwt/jwt-auth.guard'
 
 @Controller('rol')
 export class RolController {
