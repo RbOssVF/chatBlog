@@ -30,6 +30,9 @@ export class Usuario {
   @Column()
   fechaCreacion: Date;
 
+  @Column({ nullable: true }) // Agregamos una columna para la imagen de perfil
+  perfil: string;  // Guardaremos la ruta de la imagen
+
   @ManyToOne(() => Rol, (rol) => rol.usuarios)
   @JoinColumn({ name: 'rolId' })  // Aquí defines el nombre que quieras para la columna
   rol: Rol;

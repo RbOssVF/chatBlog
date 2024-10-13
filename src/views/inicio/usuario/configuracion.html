@@ -16,12 +16,25 @@
                                 <div class="card-body">
                                     <h4 class="card-title">Mis datos</h4>
                                     <div class="position-relative">
-                                        <div class="daoughnutchart-wrapper">
-                                            <img class=" img-xl rounded-circle" src="/images/faces/face15.jpg" alt="">
+                                        <div class="daoughnutchart-wrapper" id="perfilUsuario">
+                                            
                                         </div>
+
+                                        <div class="bg-gray-dark d-flex d-md-block d-xl-flex flex-row py-3 px-4 px-md-3 px-xl-4 rounded mt-3">
+                                            <div class="text-md-center text-xl-left">
+                                                <h6 class="mb-1" id="nombresUsuario"></h6>
+                                                <p class="text-muted mb-0" id="emailUsuario"></p>
+                                            </div>
+                                            <div
+                                                class="align-self-center flex-grow text-end text-md-center text-xl-right py-md-2 py-xl-0">
+                                                <h6 class="font-weight-bold mb-0 text-success" id="estadoUsuario">Activo</h6>
+                                            </div>
+                                        </div>
+
                                         <div class="form-group">
                                             <label>Subir imagen</label>
-                                            <input type="file" name="img[]" class="file-upload-default">
+                                            <!-- Solo permitir archivos de imagen -->
+                                            <input type="file" name="img[]" class="file-upload-default" accept="image/*">
                                             <div class="input-group col-xs-12 d-flex align-items-center">
                                                 <input type="text" class="form-control file-upload-info" disabled
                                                     placeholder="Seleccione una imagen">
@@ -32,28 +45,31 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div
-                                        class="bg-gray-dark d-flex d-md-block d-xl-flex flex-row py-3 px-4 px-md-3 px-xl-4 rounded mt-3">
-                                        <div class="text-md-center text-xl-left">
-                                            <h6 class="mb-1">Transfer to Paypal</h6>
-                                            <p class="text-muted mb-0">07 Jan 2019, 09:12AM</p>
-                                        </div>
-                                        <div
-                                            class="align-self-center flex-grow text-end text-md-center text-xl-right py-md-2 py-xl-0">
-                                            <h6 class="font-weight-bold mb-0">$236</h6>
-                                        </div>
-                                    </div>
-                                    <div
-                                        class="bg-gray-dark d-flex d-md-block d-xl-flex flex-row py-3 px-4 px-md-3 px-xl-4 rounded mt-3">
-                                        <div class="text-md-center text-xl-left">
-                                            <h6 class="mb-1">Tranfer to Stripe</h6>
-                                            <p class="text-muted mb-0">07 Jan 2019, 09:12AM</p>
-                                        </div>
-                                        <div
-                                            class="align-self-center flex-grow text-end text-md-center text-xl-right py-md-2 py-xl-0">
-                                            <h6 class="font-weight-bold mb-0">$593</h6>
+                                    <div class="form-group">
+                                        <label>Cambiar nombre</label>
+                                        <!-- Solo permitir archivos de imagen -->
+                                        <div class="input-group col-xs-12 d-flex align-items-center">
+                                            <input type="text" class="form-control" id=""
+                                                placeholder="Cambiar nombre">
+                                            <span class="input-group-append ms-2">
+                                                <button class="btn btn-primary"
+                                                    type="button">Actualizar</button>
+                                            </span>
                                         </div>
                                     </div>
+                                    <div class="form-group">
+                                        <label>Cambiar apellidos</label>
+                                        <!-- Solo permitir archivos de imagen -->
+                                        <div class="input-group col-xs-12 d-flex align-items-center">
+                                            <input type="text" class="form-control" id=""
+                                                placeholder="Cambiar apellidos">
+                                            <span class="input-group-append ms-2">
+                                                <button class="btn btn-primary"
+                                                    type="button">Actualizar</button>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
                                 </div>
                             </div>
                         </div>

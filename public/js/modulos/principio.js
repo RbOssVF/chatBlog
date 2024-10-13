@@ -22,6 +22,7 @@ function logout() {
         });
 }
 
+//permitir solo imagenes
 btnSubirImagen.addEventListener('click', function () {
     inpImagen.click();
 });
@@ -35,16 +36,19 @@ inpImagen.addEventListener('change', function () {
     }
 });
 
-btnConfirmar.addEventListener('click', function () {
-    const formData = {
-        perfil : inpImagen.files[0].name        
-    };
-    enviarPeticiones(`/usuarios/registrarPerfil`, 'POST', formData)
+btnConfirmar.addEventListener('click', function () { 
+    const formData = new FormData();
+    formData.append('perfil', inpImagen.files[0]);  // Asegúrate de enviar el archivo correctamente
+    console.log(formData);
+
+    enviarImagenes(`/usuarios/registrarPerfil`, 'POST', formData) // 'true' indica que no se envía como JSON
         .then(respuesta => {
-            if (respuesta.estatus) {
-                mandarNotificacion(respuesta.message, respuesta.icono)
+            if (respuesta.estado) {                
                 confirmarModal.hide();
+                obtenerDatosUsuario();
+                inpDetallesImagen.value = '';
             }
+            mandarNotificacion(respuesta.message, respuesta.icono);
         })
         .catch(error => {
             console.error(error);

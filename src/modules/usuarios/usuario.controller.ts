@@ -1,4 +1,4 @@
-import { Controller, Get, Injectable, Post, Body, Res, HttpStatus, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Injectable, Post, Body, Res, HttpStatus, Param, UseGuards, Req, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Usuario } from '../../entidades/usuario.entity';
@@ -9,6 +9,10 @@ import * as jwt from 'jsonwebtoken';
 import { JwtAuthGuard } from '../jwt/jwt-auth.guard'
 import { WebsocketGateway } from '../websocket/websocket.gateway';
 import { timeout } from 'rxjs';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+
 
 @Injectable() // Servicio y controlador en un solo archivo
 @Controller('usuarios') // Ruta base: /usuarios
@@ -252,6 +256,7 @@ export class UsuarioController {
         nombreUsuario: g_usuario.nombreUsuario,
         ipUser: g_usuario.ipUser,
         rol: g_usuario.rol.nombre,
+        perfil: g_usuario.perfil,
       };
 
       return res.status(HttpStatus.OK).json({
@@ -319,24 +324,71 @@ export class UsuarioController {
     }
   }
 
-  // @Post('registrarPerfil')
-  // @UseGuards(JwtAuthGuard)
-  // async registrarPerfil(
-  //   @Body() datosUsuario: { perfil ?: file },
-  //   @Req() req: any,
-  //   @Res() res: Response
-  // ) 
-  // {
-  //   try {
-      
-  //   } catch (error) {
-  //     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-  //       estado: false,
-  //       message: `Error al registrar el Perfil: ${error.message}`,
-  //     });
-  //   }
-  // }
-    
+  @Post('registrarPerfil')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('perfil', {
+    storage: diskStorage({
+      destination: './public/images/perfiles', // Directorio donde se guardará la imagen
+      filename: (req, file, cb) => {
+        const filename = generarNombreUnico(file); // Usar la función para generar el nombre único
+        cb(null, filename);
+      },
+    }),
+    fileFilter: (req, file, cb) => {
+      // Filtrar archivos que no sean imágenes
+      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+        return cb(new Error('Solo imágenes son permitidas'), false);
+      }
+      cb(null, true);
+    },
+  }))
+
+  async registrarPerfil(
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: any,
+    @Res() res: Response,
+  ) {
+    try {
+      // Verifica si se ha subido un archivo
+      if (!file) {
+        return res.status(HttpStatus.BAD_REQUEST).json({
+          estado: false,
+          message: 'No se ha subido ninguna imagen.',
+          icono: 'error',
+        });
+      }
+
+      const idUsuario = req.usuario.id;
+
+      // Verificar si el usuario existe
+      const g_usuario = await this.usuarioRepository.findOne({ where: { id: idUsuario } });
+      if (!g_usuario) {
+        return res.status(HttpStatus.NOT_FOUND).json({
+          estado: false,
+          message: 'Usuario no encontrado',
+          icono: 'error',
+        });
+      }
+
+      // Guardar el nombre del archivo en la base de datos
+      g_usuario.perfil = file.filename;
+
+      await this.usuarioRepository.save(g_usuario);
+
+      return res.status(HttpStatus.OK).json({
+        estado: true,
+        message: 'Perfil registrado correctamente',
+        icono: 'success',
+      });
+
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        estado: false,
+        message: `Error al registrar el Perfil: ${error.message}`,
+        icono: 'error',
+      });
+    }
+  }
 
   @Post('logout')
   async logout(@Res() res: Response) {
@@ -353,4 +405,10 @@ function generarIpUsuario() {
   // Generar un número aleatorio de 8 dígitos
   const ipUsuario = Math.floor(10000000 + Math.random() * 90000000); 
   return ipUsuario.toString(); // Devolverlo como string si prefieres
+}
+
+function generarNombreUnico(file: Express.Multer.File): string {
+  const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+  const ext = extname(file.originalname);
+  return `${file.fieldname}-${uniqueSuffix}${ext}`;
 }
