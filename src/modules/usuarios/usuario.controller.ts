@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Usuario } from '../../entidades/usuario.entity';
 import { Rol } from '../../entidades/rol.entity';
+import { DatosUsuario } from '../../entidades/datosUsuario.entity';
 import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
 import * as jwt from 'jsonwebtoken';
@@ -24,12 +25,15 @@ export class UsuarioController {
     @InjectRepository(Rol)  // Inyectar el repositorio de Rol
     private readonly rolRepository: Repository<Rol>,
 
+    @InjectRepository(DatosUsuario)
+    private readonly datosUsuarioRepository: Repository<DatosUsuario>,
+
     private readonly websocketGateway: WebsocketGateway
   ) {}
 
   // Servicio: Obtener todos los usuarios
   async findAll(): Promise<Usuario[]> {
-    return this.usuarioRepository.find({ relations: ['rol'] });
+    return this.usuarioRepository.find({ relations: ['rol']});
   }
 
   // Controlador: Ruta GET para todos los usuarios
@@ -241,6 +245,10 @@ export class UsuarioController {
         relations: ['rol'],
       });
 
+      const g_datos_usuario = await this.datosUsuarioRepository.findOne({
+         where: { usuario: usuarioId } 
+      });
+
       if (!g_usuario) {
         return res.status(HttpStatus.NOT_FOUND).json({
           estado: false,
@@ -257,6 +265,7 @@ export class UsuarioController {
         ipUser: g_usuario.ipUser,
         rol: g_usuario.rol.nombre,
         perfil: g_usuario.perfil,
+        conectado : g_datos_usuario.conectado
       };
 
       return res.status(HttpStatus.OK).json({
@@ -272,14 +281,17 @@ export class UsuarioController {
     }
   }
 
-  @Post('actualizarUsuario/:idUsuario')
+  @Post('actualizarUsuario/')
   @UseGuards(JwtAuthGuard)
   async actualizarUsuario(
-    @Param('idUsuario') idUsuario: number,
-    @Body() datosUsuario: { nombres?: string, apellidos?: string, clave?: string, estado?: boolean },
-    @Res() res: Response
+    @Body() datosUsuario: { nombres?: string, apellidos?: string, clave?: string},
+    @Res() res: Response,
+    @Req() req: any
   ) {
     try {
+
+      const idUsuario = req.usuario.id;
+
       const g_usuario = await this.usuarioRepository.findOne({
         where: { id: idUsuario },
       });
@@ -288,6 +300,7 @@ export class UsuarioController {
         return res.status(HttpStatus.NOT_FOUND).json({
           estado: false,
           message: `El usuario no existe`,
+          icono: 'warning',
         });
       }
 
@@ -305,21 +318,19 @@ export class UsuarioController {
         g_usuario.clave = hashedPassword;
       }
 
-      if (typeof datosUsuario.estado !== 'undefined') {
-        g_usuario.estado = datosUsuario.estado;
-      }
-
       const usuarioActualizado = await this.usuarioRepository.save(g_usuario);
 
       return res.status(HttpStatus.OK).json({
         estado: true,
-        message: `Usuario ${usuarioActualizado.apellidos} ${usuarioActualizado.nombres} actualizado exitosamente`,
+        message: `Tus datos estan actualizados`,
+        icono: 'success',
       });
 
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         estado: false,
         message: `Error al actualizar usuario: ${error.message}`,
+        icono: 'error',
       });
     }
   }
@@ -389,6 +400,51 @@ export class UsuarioController {
       });
     }
   }
+
+  @Post('cambiarEstadoConectado')
+  @UseGuards(JwtAuthGuard)
+  async cambiarEstadoConectado(
+    @Res() res: Response,
+    @Req() req: any,
+    @Body() datosUsuario: {
+      estado: boolean
+    }
+  ) {
+    try {
+      const idUsuario = req.usuario.id;
+
+      const g_datos_usuario = await this.datosUsuarioRepository.findOne({ where: { usuario: idUsuario } });
+
+      if (!g_datos_usuario) {
+        const crear_estado_usuario = this.datosUsuarioRepository.create({
+          usuario: idUsuario,
+          conectado: datosUsuario.estado
+        });
+        await this.datosUsuarioRepository.save(crear_estado_usuario);
+        return res.status(HttpStatus.OK).json({
+          estado: true,
+          message: 'Cambiado correctamente',
+          icono: 'success',
+        });
+      } else {
+        g_datos_usuario.conectado = datosUsuario.estado;
+        await this.datosUsuarioRepository.save(g_datos_usuario);
+
+        return res.status(HttpStatus.OK).json({
+          estado: true,
+          message: 'Cambiado correctamente',
+          icono: 'success',
+        });
+      }
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        estado: false,
+        message: `Error al cambiar estado: ${error.message}`,
+        icono: 'error',
+      });
+    }
+  }
+
 
   @Post('logout')
   async logout(@Res() res: Response) {
