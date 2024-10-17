@@ -66,3 +66,18 @@ async function enviarImagenes(url, metodo = 'GET', data = null) {
         console.error('Error en la petición:', error);
     }
 }
+
+function verClave(id, button) {
+    const input = document.getElementById(id);
+    const icon = button.querySelector('i');
+
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('mdi-eye');
+        icon.classList.add('mdi-eye-off'); // Cambia al ícono del ojo tachado
+    } else {
+        input.type = 'password';
+        icon.classList.remove('mdi-eye-off');
+        icon.classList.add('mdi-eye'); // Cambia al ícono del ojo normal
+    }
+}

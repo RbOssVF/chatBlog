@@ -24,4 +24,11 @@ export class AppController {
   configuracion() {
     return { titulo: 'Configuración'};
   }
+
+  @Get('/buscarAmigos')
+  @UseGuards(JwtAuthGuard)  // Proteger la ruta con el guard
+  @Render('inicio/buscarAmigos.html')  // Página de inicio
+  buscarAmigos() {
+    return { titulo: 'Buscar amigos'};
+  }
 }

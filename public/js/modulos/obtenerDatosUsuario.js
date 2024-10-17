@@ -15,13 +15,13 @@ function obtenerDatosUsuario() {
                 
                 const perfilUsuarioNav = document.getElementById('perfilUsuarioNav');
                 const perfilUsuarioHeader = document.getElementById('perfilUsuarioHeader');
-                const nombresUsuario = document.getElementById('nombresUsuario');
-                const emailUsuario = document.getElementById('emailUsuario');
-                const perfilUsuario = document.getElementById('perfilUsuario');
-
-                const cambiarEstadoConectado = document.getElementById('cambiarEstadoConectado');
-                const estadoUsuario = document.getElementById('estadoUsuario');
                 const estadoUsuarioNav = document.getElementById('estadoUsuarioNav');
+
+                const datosUsuario = document.getElementById('datosUsuario');
+                const estadoUsuario = document.getElementById('estadoUsuario');
+                const cambiarEstadoConectado = document.getElementById('cambiarEstadoConectado');
+                const perfilUsuario = document.getElementById('perfilUsuario');
+                
 
                 const usuarioPerfilGlobal = respuesta.usuario.perfil ? `/images/perfiles/${respuesta.usuario.perfil}` : 'images/faces/face15.jpg'
 
@@ -42,13 +42,9 @@ function obtenerDatosUsuario() {
                     estadoUsuarioNav.title = 'Desconectado';
                 }
 
-                if (cambiarEstadoConectado && estadoUsuario && perfilUsuario && nombresUsuario && emailUsuario) {
+                if (datosUsuario && estadoUsuario && cambiarEstadoConectado && perfilUsuario) {
+
                     cambiarEstadoConectado.checked = respuesta.usuario.conectado;
-
-                    nombresUsuario.innerHTML = `${respuesta.usuario.nombres} ${respuesta.usuario.apellidos}`;
-
-                    emailUsuario.innerHTML = respuesta.usuario.email;
-
                     perfilUsuario.innerHTML = `<img class=" img-xl rounded-circle" src="${usuarioPerfilGlobal}" alt="">`
 
                     if (respuesta.usuario.conectado == true) {
@@ -60,6 +56,31 @@ function obtenerDatosUsuario() {
                                                     <span class="text-danger">Inactivo</span>
                                                 </h6>`;
                     }
+                    
+                    let html = '';
+
+                    html += `
+                    <div class="col-md-6">
+                        <h6 class="mb-1">${respuesta.usuario.nombres}</h6>
+                    </div>
+                    <div class="col-md-6 d-flex justify-content-end">
+                        <p class="text-muted mb-0">${respuesta.usuario.apellidos}</p>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6 class="mb-1">${respuesta.usuario.nombreUsuario}</h6>
+                    </div>
+                    <div class="col-md-6 d-flex justify-content-end">
+                        <p class="text-muted mb-0">#${respuesta.usuario.ipUser}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-1">${respuesta.usuario.email}</h6>
+                    </div>
+                    <div class="col-md-6 d-flex justify-content-end">
+                        <p class="text-muted mb-0">Peru</p>
+                    </div>`
+
+                    datosUsuario.innerHTML = html;
                 }
                 
             }

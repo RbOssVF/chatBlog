@@ -1,9 +1,14 @@
 //iniciar pagina
+const modalUpdateDatosUsuario = new bootstrap.Modal(document.querySelector('#modalUpdateDatosUsuario'));
+
 const btnSubirImagen = document.querySelector('.file-upload-browse');
 const inpImagen = document.querySelector('.file-upload-default');
 const inpDetallesImagen = document.querySelector('.file-upload-info');
 const btnConfirmar = document.querySelector('#btnConfirmar');
 const cambiarEstadoConectado = document.querySelector('#cambiarEstadoConectado');
+const formularioUpdateDatos = document.querySelector('#formUpdateDatos');
+
+
 
 document.addEventListener("DOMContentLoaded", function () {
 
@@ -43,34 +48,42 @@ document.addEventListener("DOMContentLoaded", function () {
         const estado = cambiarEstadoConectado.checked;
         updateConectado(estado);
     });
-})
 
+    formularioUpdateDatos.addEventListener('submit', (event) => {
+        event.preventDefault();
 
-function updateDatosUsuario() {
-    const apellidosInput = document.getElementById('updateApellidos');
-    const nombresInput = document.getElementById('updateNombres');
-    
-    const apellidos = apellidosInput.value;
-    const nombres = nombresInput.value;
+        const apellidos = document.getElementById('updateApellidos').value;
+        const nombres = document.getElementById('updateNombres').value;
+        const updateClave = document.getElementById('updateClave').value;
+        const updateClave2 = document.getElementById('updateClave2').value;
 
-    const jsonCuerpo = {
-        apellidos: apellidos.trim(),
-        nombres: nombres.trim(),
-    }
-
-    enviarPeticiones('/usuarios/actualizarUsuario/', 'POST', jsonCuerpo)
-        .then(respuesta => {
-            if (respuesta.estado) {
-                obtenerDatosUsuario();
-                apellidosInput.value = "";
-                nombresInput.value = "";
+        if (updateClave){
+            if (updateClave !== updateClave2) {
+                mandarNotificacion('Las contraseñas no coinciden', 'error')
+                return;
             }
-            mandarNotificacion(respuesta.message, respuesta.icono)
-        })
-        .catch(error => {
-            console.error(error);
-        });
-}
+        }
+
+        const jsonCuerpo = {
+            apellidos: apellidos.trim(),
+            nombres: nombres.trim(),
+            clave: updateClave.trim(),
+        }
+
+        enviarPeticiones('/usuarios/actualizarUsuario/', 'POST', jsonCuerpo)
+            .then(respuesta => {
+                if (respuesta.estado) {
+                    obtenerDatosUsuario();
+                    formularioUpdateDatos.reset();
+                    modalUpdateDatosUsuario.hide();
+                }
+                mandarNotificacion(respuesta.message, respuesta.icono)
+            })
+            .catch(error => {
+                console.error(error);
+            });
+    });
+})
 
 function logout() {
     enviarPeticiones(`/usuarios/logout`, 'POST')

@@ -34,16 +34,6 @@
                                         <div class="daoughnutchart-wrapper" id="perfilUsuario">
                                             
                                         </div>
-
-                                        <div class="row mt-3 mb-3 col-md-12 d-flex justify-content-center">
-                                            <div class="col-md-6">
-                                                <h6 class="mb-1" id="nombresUsuario">John Doe</h6>
-                                            </div>
-                                            <div class="col-md-6 d-flex justify-content-end">
-                                                <p class="text-muted mb-0" id="emailUsuario">johndoe@example.com</p>
-                                            </div>
-                                        </div>
-
                                         <div class="form-group">
                                             <label>Subir imagen</label>
                                             <!-- Solo permitir archivos de imagen -->
@@ -57,31 +47,12 @@
                                                 </span>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Cambiar nombre</label>
-                                        <!-- Solo permitir archivos de imagen -->
-                                        <div class="input-group col-xs-12 d-flex align-items-center">
-                                            <input type="text" class="form-control" id="updateNombres"
-                                                placeholder="Cambiar nombre">
-                                            <span class="input-group-append ms-2">
-                                                <button class="btn btn-primary"
-                                                    type="button" onclick="updateDatosUsuario()">Actualizar</button>
-                                            </span>
+                                        <div class="row mb-3 col-md-12 d-flex justify-content-center" id="datosUsuario">
                                         </div>
                                     </div>
-                                    <div class="form-group">
-                                        <label>Cambiar apellidos</label>
-                                        <!-- Solo permitir archivos de imagen -->
-                                        <div class="input-group col-xs-12 d-flex align-items-center">
-                                            <input type="text" class="form-control" id="updateApellidos"
-                                                placeholder="Cambiar apellidos">
-                                            <span class="input-group-append ms-2">
-                                                <button class="btn btn-primary"
-                                                    type="button" onclick="updateDatosUsuario()">Actualizar</button>
-                                            </span>
-                                        </div>
-                                    </div>
+
+                                    <button class="btn btn-primary"
+                                                    type="button" data-bs-toggle="modal" data-bs-target="#modalUpdateDatosUsuario">Actualizar Datos</button>
                                     
                                 </div>
                             </div>
@@ -199,12 +170,71 @@
         </div>
     </div>
 
+
+    <div class="modal fade" id="modalUpdateDatosUsuario" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-lg shadow-lg">
+                <div class="modal-header border-0 justify-content-center position-relative">
+                    <div class="icon-circle bg-primary text-white position-absolute top-0 start-50 translate-middle">
+                        <i class="mdi mdi-update mdi-48px"></i>
+                    </div>
+                    <h5 class="modal-title mt-4" id="exampleModalLabel">Actualizar Datos</h5>
+                </div>
+                <div class="modal-body text-start">
+                    <form id="formUpdateDatos">
+                        <div class="mb-3">
+                            <label for="recipient-name" class="col-form-label">Nombre:</label>
+                            <input type="text" class="form-control" id="updateNombres">
+                        </div>
+                        <div class="mb-3">
+                            <label for="recipient-name" class="col-form-label">Apellidos:</label>
+                            <input type="text" class="form-control" id="updateApellidos">
+                        </div>
+                        <div class="mb-3">
+                            <label for="recipient-name" class="col-form-label">Pais (Opcional):</label>
+                            <input type="text" class="form-control" id="updatePais">
+                        </div>
+                        <div class="mb-3">
+                            <label for="recipient-name" class="col-form-label">Fecha de Nacimiento (Opcional):</label>
+                            <input type="date" class="form-control" id="updateFechaNacimiento">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="recipient-name" class="col-form-label">Contraseña</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control p_input" id="updateClave" placeholder="Ingresa tu contraseña" aria-label="Ingresa tu contraseña">
+                                <button type="button" class="btn btn-outline-secondary" onclick="verClave('updateClave', this)">
+                                    <i class="mdi mdi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="recipient-name" class="col-form-label">Confirmar Contraseña</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control p_input" id="updateClave2" placeholder="Re-ingresa tu contraseña" aria-label="Ingresa tu contraseña">
+                                <button type="button" class="btn btn-outline-secondary" onclick="verClave('updateClave2', this)">
+                                    <i class="mdi mdi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <hr>
+                        <div class="text-end">
+                            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Confirmar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal -->
     
     <!-- plugins:js -->
 </body>
-<script src="/js/modulos/principio.js"></script>
 
 {% include "principales/scripts.html" %}
+
+<script src="/js/modulos/principio.js"></script>
 
 </html>

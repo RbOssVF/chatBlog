@@ -1,6 +1,6 @@
 import { Controller, Get, Injectable, Post, Body, Res, HttpStatus, Param, UseGuards, Req, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Not  } from 'typeorm';
 import { Usuario } from '../../entidades/usuario.entity';
 import { Rol } from '../../entidades/rol.entity';
 import { DatosUsuario } from '../../entidades/datosUsuario.entity';
@@ -443,6 +443,32 @@ export class UsuarioController {
         icono: 'error',
       });
     }
+  }
+
+  @Get('listaUsuariosBusqueda')
+  @UseGuards(JwtAuthGuard)
+  async usuariosBusqueda(
+    @Req() req: any
+  ) {
+    const idUsuario = req.usuario.id;
+    const all_usuarios = await this.usuarioRepository.find({ where: { estado: true, rol: {id: 2}, id: Not(idUsuario)}, relations: ['rol'] }); 
+  
+    const usuarios = all_usuarios.map((usuario) => {  
+      return {
+        id: usuario.id,
+        perfil: usuario.perfil,
+        nombreUsuario: usuario.nombreUsuario,
+        nombres: usuario.nombres,
+        apellidos: usuario.apellidos,
+        rol : usuario.rol.id
+        //pais
+      };
+    });
+  
+    return {
+      estado: true,
+      usuarios,
+    };
   }
 
 

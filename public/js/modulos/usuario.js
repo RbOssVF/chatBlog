@@ -26,12 +26,10 @@ document.addEventListener("DOMContentLoaded", function () {
             .then(respuesta => {
                 if (respuesta.estado) {
                     fromLogin.reset();
+                    document.cookie = `token=${respuesta.token}; path=/`;
+                    window.location.href = '/inicio';
                 }
-                //guardar token
-                document.cookie = `token=${respuesta.token}; path=/`;
-
                 mandarNotificacion(respuesta.message, respuesta.icono)
-                window.location.href = '/inicio';
             })
             .catch(error => {
                 console.log(error);
