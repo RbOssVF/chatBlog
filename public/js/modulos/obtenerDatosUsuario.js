@@ -90,3 +90,17 @@ function obtenerDatosUsuario() {
             console.error(error);
         });
 }
+
+function logout() {
+    enviarPeticiones(`/usuarios/logout`, 'POST')
+        .then(respuesta => {
+            if (respuesta.estado) {
+                mandarNotificacion(respuesta.message, respuesta.icono)                
+                window.location.href = '/';
+                
+            }
+        })
+        .catch(error => {
+            console.error(error);
+        });
+}

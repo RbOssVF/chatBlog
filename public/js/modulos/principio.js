@@ -85,20 +85,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 })
 
-function logout() {
-    enviarPeticiones(`/usuarios/logout`, 'POST')
-        .then(respuesta => {
-            if (respuesta.estado) {
-                mandarNotificacion(respuesta.message, respuesta.icono)                
-                window.location.href = '/';
-                
-            }
-        })
-        .catch(error => {
-            console.error(error);
-        });
-}
-
 function updateConectado(estado) {
     const jsonCuerpo = {
         estado: estado

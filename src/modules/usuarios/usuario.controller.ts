@@ -471,6 +471,61 @@ export class UsuarioController {
     };
   }
 
+  @Get('seleccionarUsuario/:idUsuario')
+  @UseGuards(JwtAuthGuard)
+  async seleccionarUsuario(
+    @Res() res: Response,
+    @Param('idUsuario') idUsuario: number
+  ) {
+    try {
+      // Buscar el usuario por ID, incluyendo la relación con rol
+      const g_usuario = await this.usuarioRepository.findOne({
+        where: { id: idUsuario },
+        relations: ['rol'], // Asegúrate de que perfil también está relacionado si se usa
+      });
+  
+      if (!g_usuario) {
+        return res.status(HttpStatus.NOT_FOUND).json({
+          estado: false,
+          message: `El usuario no existe`,
+        });
+      }
+  
+      // Buscar datos adicionales del usuario
+      const g_datos_usuario = await this.datosUsuarioRepository.findOne({
+        where: { usuario: g_usuario },
+      });
+  
+      // Validar si g_datos_usuario existe
+      const conectado = g_datos_usuario ? g_datos_usuario.conectado : null;
+  
+      // Construir el objeto de usuario a retornar
+      const usuario = {
+        id: g_usuario.id,
+        nombres: g_usuario.nombres,
+        apellidos: g_usuario.apellidos,
+        email: g_usuario.email,
+        nombreUsuario: g_usuario.nombreUsuario,
+        ipUser: g_usuario.ipUser,
+        rol: g_usuario.rol ? g_usuario.rol.nombre : 'Sin rol', // Validar rol
+        perfil: g_usuario.perfil || 'Sin perfil', // Validar perfil
+        conectado: conectado, // Validar conexión
+      };
+  
+      // Retornar respuesta exitosa
+      return res.status(HttpStatus.OK).json({
+        estado: true,
+        usuario,
+      });
+    } catch (error) {
+      // Manejo de errores internos
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        estado: false,
+        message: `Error al obtener usuario: ${error.message}`,
+      });
+    }
+  }
+
 
   @Post('logout')
   async logout(@Res() res: Response) {

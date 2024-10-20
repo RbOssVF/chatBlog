@@ -25136,3 +25136,30 @@ dl li {
   height: 89vh;
 }
 /*# sourceMappingURL=maps/style.css.map */
+
+
+.btn-list-custom {
+  background-color: rgba(0, 0, 0, 0.5);
+  color: #fff;
+}
+
+.btn-list-custom:hover {
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #fff;
+}
+
+.btn-list-custom:focus {
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #fff;
+}
+
+.btn-list-custom:active {
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #fff;
+}
+
+.btn-list-custom.active {
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-color: rgba(0, 0, 0, 0.2);
+}
