@@ -198,12 +198,23 @@ export class AmistadesController {
                     const amigoData = amigo.usuario1.id === idUsuario
                         ? amigo.usuario2
                         : amigo.usuario1;
-
+            
                     // Obtener estado del usuario amigo
                     const estadoUsuario = await this.datosUsuarioRepository.findOne({
                         where: { usuario: { id: amigoData.id } },
                     });
-
+            
+                    // Verificar si ya existen mensajes entre los usuarios
+                    const v_mensajes = await this.mensajesRepository.find({
+                        where: [
+                            { emisorId: idUsuario, receptorId: amigoData.id },
+                            { emisorId: amigoData.id, receptorId: idUsuario },
+                        ]
+                    });
+            
+                    // Verificar si hay mensajes entre los usuarios
+                    const existeMensaje = v_mensajes.length > 0;
+            
                     return {
                         id: amigoData.id,
                         nombres: amigoData.nombres,
@@ -211,6 +222,7 @@ export class AmistadesController {
                         nombreUsuario: amigoData.nombreUsuario,
                         estado: estadoUsuario?.conectado || true, // Control nulo con operador de coalescencia
                         perfil: amigoData.perfil,
+                        existe: existeMensaje, // true si ya existen mensajes, false si no
                     };
                 })
             );
@@ -238,64 +250,196 @@ export class AmistadesController {
             const idUsuario = req.usuario.id;
 
             // Obtener los últimos mensajes donde el usuario es emisor o receptor, ordenados por fecha
-            const g_mensajes = await this.mensajesRepository
-                .createQueryBuilder('mensaje')
-                .where('mensaje.emisorId = :idUsuario OR mensaje.receptorId = :idUsuario', { idUsuario })
-                .orderBy('mensaje.fecha', 'DESC')
-                .leftJoinAndSelect('mensaje.emisor', 'emisor')
-                .leftJoinAndSelect('mensaje.receptor', 'receptor')
+            const g_usuarios_mensajes = await this.mensajesRepository
+                .createQueryBuilder('mensajes')
+                .innerJoin('usuario', 'u', 'u.id = mensajes.receptorId')
+                .select('DISTINCT u')  // Selecciona todos los campos de la tabla usuario
+                .where('mensajes.emisorId = :idUsuario', { idUsuario })
                 .getMany();
 
-            // Filtrar los últimos mensajes únicos por contacto
-            const mensajesUnicos = Array.from(
-                new Map(
-                    g_mensajes.map((mensaje) => {
-                        const contactoId = mensaje.emisor.id === idUsuario
-                            ? mensaje.receptor.id
-                            : mensaje.emisor.id;
-                        return [contactoId, mensaje];
-                    })
-                ).values()
-            );
-
-            // Formatear los contactos con el último mensaje
-            const contactos = await Promise.all(
-                mensajesUnicos.map(async (mensaje) => {
-                    const contacto = mensaje.emisor.id === idUsuario
-                        ? mensaje.receptor
-                        : mensaje.emisor;
-
-                    const estadoUsuario = await this.datosUsuarioRepository.findOne({
-                        where: { usuario: { id: contacto.id } },
-                    });
-
-                    const minLength = 6;
-                    const textoReducido = mensaje.texto.length >= minLength
-                        ? mensaje.texto
-                        : `${mensaje.texto.padEnd(minLength, '.')}...`;
-
-                    return {
-                        id: contacto.id,
-                        nombreUsuario: contacto.nombreUsuario,
-                        nombres: contacto.nombres,
-                        apellidos: contacto.apellidos,
-                        perfil: contacto.perfil,
-                        ultimoMensaje: textoReducido,
-                        fechaMensaje: mensaje.fecha,
-                        estado: estadoUsuario?.conectado || false, // Control de nulo
-                    };
-                })
-            );
-
-            return res.status(HttpStatus.OK).json({
-                estado: true,
-                contactos,
-            });
+            
         } catch (error) {
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
                 estado: false,
                 message: `Error al obtener la lista de usuarios: ${error.message}`,
             });
         }
+    }
+
+    @Post('empezarChat/:idURecep')
+    @UseGuards(JwtAuthGuard)
+    async empezarChat(
+        @Req() req: any,
+        @Res() res: Response,
+        @Param() id: { idURecep: number },
+        @Body() body: { texto: string }
+    ) {
+        try {
+            const idUsuario = req.usuario.id;
+            const fechaMensaje = new Date();
+
+            const v_receptor = await this.usuarioRepository.findOne({ where: { id: id.idURecep } });
+            if (!v_receptor) {
+                return res.status(HttpStatus.NOT_FOUND).json({
+                    estado: false,
+                    message: `El receptor no existe`,
+                    icono: 'error',
+                });
+            }
+
+            const crear_mensaje = this.mensajesRepository.create({
+                emisorId: idUsuario,
+                receptorId: id.idURecep,
+                texto: body.texto,
+                fecha: fechaMensaje
+            });
+
+            await this.mensajesRepository.save(crear_mensaje);
+
+            return res.status(HttpStatus.OK).json({
+                estado: true,
+                message: 'Chat iniciado correctamente',
+                icono: 'success',
+            });
+
+        } catch (error) {
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                estado: false,
+                message: `Error al obtener la lista de usuarios: ${error.message}`,
+                icono: 'error',
+            });
+        }
+        
+    }
+
+    @Get('verChat/:idUsuarioRecep')
+    @UseGuards(JwtAuthGuard)
+    async verChat(
+        @Req() req: any,
+        @Res() res: Response,
+        @Param() receptor: { idUsuarioRecep: number }
+    ) {
+        try {
+            
+            const idUsuario = req.usuario.id;
+            const g_mensajes = await this.mensajesRepository.find({
+                where: [
+                    { emisorId: idUsuario, receptorId: receptor.idUsuarioRecep },
+                    { emisorId: receptor.idUsuarioRecep, receptorId: idUsuario },
+                ],
+                order: { fecha: 'ASC' }, // Ordenar por fecha ascendente para mostrar cronológicamente
+            });
+
+            const gDatosRecep = await this.usuarioRepository.findOne({ where: { id: receptor.idUsuarioRecep } });
+
+            if (!gDatosRecep) {
+                return res.status(HttpStatus.NOT_FOUND).json({
+                    estado: false,
+                    message: `El receptor no existe`,
+                })
+            }
+
+            const datosRecep = {
+                id : gDatosRecep.id,
+                nombreUsuario : gDatosRecep.nombreUsuario,
+                perfil : gDatosRecep.perfil,
+            }
+
+            const mensajes = g_mensajes.map((mensaje) => {
+                const fecha_format = formatearFechaRelativa(new Date(mensaje.fecha));
+                return {
+                    id: mensaje.id,
+                    emisorId: mensaje.emisorId,
+                    receptorId: mensaje.receptorId,
+                    idUsuario : idUsuario,
+                    texto: mensaje.texto,
+                    fecha: fecha_format,
+                };
+            });
+
+
+            return res.status(HttpStatus.OK).json({
+                estado: true,
+                mensajes,
+                datosRecep
+            });
+
+        } catch (error) {
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                estado: false,
+                message: `Error al obtener la lista de usuarios: ${error.message}`,
+            })
+        }    
+    }
+
+    @Post('nuevoMensaje/:idUsuarioRecep')
+    @UseGuards(JwtAuthGuard)
+    async nuevoAmistad(
+        @Req() req: any,
+        @Res() res: Response,
+        @Param() receptor: { idUsuarioRecep: number },
+        @Body() cuerpo: { texto: string }
+    ) {
+        try {
+            const idUsuario = req.usuario.id;
+            const v_receptor = await this.usuarioRepository.findOne({ where: { id: receptor.idUsuarioRecep } });
+            if (!v_receptor) {
+                return res.status(HttpStatus.NOT_FOUND).json({
+                    estado: false,
+                    message: `El receptor no existe`,
+                })
+            }
+
+            const nuevo_mensaje = this.mensajesRepository.create({
+                emisorId: idUsuario,
+                receptorId: v_receptor.id,
+                texto: cuerpo.texto,
+                fecha: new Date()
+            });
+
+            await this.mensajesRepository.save(nuevo_mensaje);
+
+            return res.status(HttpStatus.OK).json({
+                estado: true,
+                message: 'Mensaje enviado correctamente',
+            })
+
+        } catch (error) {
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                estado: false,
+                message: `Error al obtener la lista de usuarios: ${error.message}`,
+            })
+        }    
+    }
+    
+}
+
+
+function formatearFechaRelativa (fecha: Date) {
+    const now = new Date();
+    const difference = now.getTime() - fecha.getTime(); // Diferencia en milisegundos
+
+    const seconds = Math.floor(difference / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    const weeks = Math.floor(days / 7);
+    const months = Math.floor(days / 30);
+    const years = Math.floor(days / 365);
+
+    if (seconds < 60) {
+        return "Ahora";
+    } else if (minutes < 60) {
+        return `Hace ${minutes} minuto${minutes !== 1 ? 's' : ''}`;
+    } else if (hours < 24) {
+        return `Hace ${hours} hora${hours !== 1 ? 's' : ''}`;
+    } else if (days < 7) {
+        return `Hace ${days} día${days !== 1 ? 's' : ''}`;
+    } else if (weeks < 4) {
+        return `Hace ${weeks} semana${weeks !== 1 ? 's' : ''}`;
+    } else if (months < 12) {
+        return `Hace ${months} mes${months !== 1 ? 'es' : ''}`;
+    } else {
+        return `Hace ${years} año${years !== 1 ? 's' : ''}`;
     }
 }

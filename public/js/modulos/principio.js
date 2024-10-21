@@ -133,7 +133,9 @@ async function contruirListaAmigosChat() {
                                         <p class="text-muted mb-0">${amigo.estado ? 'Conectado' : 'Inactivo'}</p>
                                     </div>
                                     <div class="mr-auto text-sm-right pt-2 pt-sm-0">
-                                        <button class="btn btn-primary btn-icon" onclick="empezarChat(${amigo.id})"><i class="mdi mdi-message"></i></button>
+                                        ${amigo.existe ? 
+                                            `<button class="btn btn-success btn-icon" onclick="abrirChat(${amigo.id})"><i class="mdi mdi-message-text-outline"></i></button>` : 
+                                            `<button class="btn btn-warning btn-icon" onclick="empezarChat(${amigo.id})"><i class="mdi mdi-human-greeting"></i></button>`}
                                     </div>
                                 </div>
                             </div>
@@ -170,13 +172,13 @@ async function mostrarListaMensajes() {
                 return;
             }
 
-            respuesta.contactos.forEach(dato, index => {
+            respuesta.contactos.forEach((dato, index) => {
                 const activeClass = index === 0 ? 'active' : '';
 
                 html += `
-                    <button type="button" class="${activeClass} list-group-item list-group-item-action d-flex align-items-center p-3 mb-2 rounded border-0 btn-list-custom" aria-current="true" onclick="seleccionarUsuario('${dato.id}')">
-                        <div class="preview-thumbnail">
-                            <img class="rounded-3" src="/images/perfiles/${dato.perfil}" alt="image">
+                    <button type="button" class="${activeClass} list-group-item list-group-item-action d-flex align-items-center p-3 mb-2 rounded border-0 btn-list-custom" aria-current="true" onclick="verChatUsuario('${dato.id}')">
+                        <div class="user-thumbnail me-3">
+                            <img class="img-xs rounded-circle" src="/images/perfiles/${dato.perfil}" alt="${dato.nombreUsuario}">
                         </div>
                         <div class="preview-item-content d-sm-flex flex-grow">
                         <div class="flex-grow">
@@ -196,6 +198,100 @@ async function mostrarListaMensajes() {
         }
 
     } catch (error) {
+        console.log(error);
+    }
+}
+
+
+async function empezarChat(idURecep) {
+    const url = `/amistades/empezarChat/${idURecep}/`;
+    const jsonCuerpo = {
+        texto : 'Hola'
+    }
+    try {
+        const repuesta = await enviarPeticiones(url, 'POST', jsonCuerpo);
+
+        if (repuesta.estado) {
+            mostrarListaMensajes();
+        }
+        mandarNotificacion(repuesta.message, repuesta.icono)
+
+    } catch (error) {
+        console.log(error);
+        
+    }
+}
+
+
+async function verChatUsuario(idUsuarioRecep) {
+    const url = `/amistades/verChat/${idUsuarioRecep}/`;
+    let html = ``;
+    const divChatUsuario = document.querySelector('#divChatUsuario');
+    const divDatosRecep = document.querySelector('#divDatosRecep');
+    const divEscribirMensajes = document.querySelector('#divEscribirMensajes');
+    try {
+        const respuesta = await enviarPeticiones(url);
+        if (respuesta.estado) {
+            
+            divDatosRecep.innerHTML = `
+                <h4 class="card-title mb-1">Chat con ${respuesta.datosRecep.nombreUsuario}</h4>
+                <a class="text-muted mb-1" href="#" type="button">Ver perfil</a>
+            `;
+
+            respuesta.mensajes.forEach((dato, index) => {
+                html += `
+                    ${dato.idUsuario === dato.emisorId ? `
+                        
+                        <div class="d-flex flex-row-reverse mb-2">
+                            <div class="p-2 bg-primary text-white rounded">
+                            <p class="mb-0">${dato.texto}</p>
+                            </div>
+                        </div>
+                        
+                        ` : `
+                        <div class="d-flex flex-row mb-2">
+                            <div class="p-2 bg-light rounded text-dark">
+                            <p class="mb-0">${dato.texto}</p>
+                            </div>
+                        </div>
+                        `}
+                `
+            })
+            divChatUsuario.innerHTML = html;
+
+            divEscribirMensajes.innerHTML = `
+                <form id="frmEnviarMensaje">
+                    <div class="input-group">
+                        <input type="text" class="form-control rounded-3" id="txtEnviar" placeholder="Escribir..." aria-label="Escribir..." aria-describedby="basic-addon2">
+                        <div class="input-group-append mx-2 d-flex align-items-center">
+                            <button class="btn btn-reddit rounded-3 " type="submit">Enviar</button>
+                        </div>
+                    </div>
+                </form>
+            `
+            const frmEnviarMensaje = document.querySelector('#frmEnviarMensaje');
+            frmEnviarMensaje.addEventListener('submit', (e) => {
+                e.preventDefault();
+                enviarMensaje(idUsuarioRecep);
+            })
+        }
+
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+async function enviarMensaje(idUsuarioRecep) {
+    const url = `/amistades/nuevoMensaje/${idUsuarioRecep}/`;
+    const jsonCuerpo = {
+        texto : document.getElementById('txtEnviar').value
+    }
+    try {
+        const respuesta = await enviarPeticiones(url, 'POST', jsonCuerpo);
+        if (respuesta.estado) {
+            verChatUsuario(idUsuarioRecep);
+        }
+    } catch (error) {   
         console.log(error);
     }
 }
