@@ -32,13 +32,16 @@ function listarUsuariosBusqueda() {
                     return busquedaUsuarios.innerHTML = html
                 }
 
+                const idPrimerUsuario = respuesta.usuarios[0].id;
+                seleccionarUsuario(idPrimerUsuario);
               
                 respuesta.usuarios.forEach((dato, index) => {
 
                     const activeClass = index === 0 ? 'active' : ''; // Aplicar clase 'active' al primer usuario
+                    
 
                     html += `
-                        <button type="button" class="list-group-item list-group-item-action d-flex align-items-center p-3 mb-2 rounded border-0 btn-list-custom" aria-current="true" onclick="seleccionarUsuario('${dato.id}')">
+                        <button type="button" class="${activeClass} list-group-item list-group-item-action d-flex align-items-center p-3 mb-2 rounded border-0 btn-list-custom" aria-current="true" onclick="seleccionarUsuario('${dato.id}')">
                             <div class="user-thumbnail me-3">
                                 <img class="img-xs rounded-circle" src="/images/perfiles/${dato.perfil}" alt="${dato.nombreUsuario}">
                             </div>
@@ -47,7 +50,7 @@ function listarUsuariosBusqueda() {
                                 <p class="text-muted small mb-0">Peru</p>
                             </div>
                             <div class="text-end">
-                                <p class="text-muted small mb-0">${dato.amigos || 100} amigos</p>
+                                <p class="text-muted small mb-0">${dato.totalAmigos || 0} amigos</p>
                             </div>
                         </button>
                     `;
@@ -92,12 +95,16 @@ async function seleccionarUsuario(idUsuario) {
                     </div>
 
                     <div class="row mt-3 mb-3 col-md-12 d-flex justify-content-center">
+                        <div class="col-md-12 mb-3">
+                            <button class="btn btn-facebook btn-sm" onclick="solicitarAmistad(${respuesta.usuario.id})">Mandar solicitud</button>
+                        </div>
+
                         <div class="col-md-6">
                             <h6 class="mb-1">${respuesta.usuario.nombres} ${respuesta.usuario.apellidos}</h6>
                             <h6 class="mb-1 fw-bold text-muted">${respuesta.usuario.nombreUsuario}</h6>
                         </div>
                         <div class="col-md-6 d-flex justify-content-end">
-                            <p class="text-muted mb-0">${respuesta.usuario.amigos || 0} amigos</p>
+                            <p class="text-muted mb-0">${respuesta.usuario.totalAmigos || 0} amigos</p>
                         </div>
                     </div>
 
@@ -142,5 +149,20 @@ async function seleccionarUsuario(idUsuario) {
         console.error('Error al obtener la información del usuario:', error);
         divInfoUsuario.innerHTML = `<p class="text-danger">Error al cargar la información del usuario.</p>`;
         divInfoUsuario2.innerHTML = '<p class="text-danger">Error al cargar la información del usuario.</p>';
+    }
+}
+
+async function solicitarAmistad(idAmigoFut) {
+    const url = `/amistades/enviarSolicitud/${idAmigoFut}/`;   
+
+    try {
+        const respuesta = await enviarPeticiones(url, 'POST');
+        if (respuesta.estado) {
+            listarUsuariosBusqueda();
+        } 
+        mandarNotificacion(respuesta.message, respuesta.icono)
+
+    } catch (error) {
+        console.error('Error al solicitar amistad:', error);
     }
 }

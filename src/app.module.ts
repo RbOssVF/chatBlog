@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsuarioModule } from './modules/usuarios/usuario.module'; 
+import { AmistadesModule } from './modules/amistades/amistades.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
 import { AppController } from './app.controller';
 
@@ -18,7 +19,8 @@ import { AppController } from './app.controller';
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: false, // Mantén false si estás usando migraciones
     }),
-    UsuarioModule
+    UsuarioModule,
+    AmistadesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

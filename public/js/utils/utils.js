@@ -81,3 +81,12 @@ function verClave(id, button) {
         icon.classList.add('mdi-eye'); // Cambia al ícono del ojo normal
     }
 }
+
+function abriModales(idModalMandado, estado) {
+    const idModal = new bootstrap.Modal(document.getElementById(idModalMandado));
+    if (estado) {
+        idModal.show();
+    } else {
+        idModal.hide();
+    }
+}

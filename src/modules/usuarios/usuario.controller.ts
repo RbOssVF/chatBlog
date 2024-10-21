@@ -1,6 +1,6 @@
 import { Controller, Get, Injectable, Post, Body, Res, HttpStatus, Param, UseGuards, Req, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not  } from 'typeorm';
+import { Repository, Not, In  } from 'typeorm';
 import { Usuario } from '../../entidades/usuario.entity';
 import { Rol } from '../../entidades/rol.entity';
 import { DatosUsuario } from '../../entidades/datosUsuario.entity';
@@ -13,6 +13,7 @@ import { timeout } from 'rxjs';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { Amistades, Amigos } from 'src/entidades/amigosUsuario.entity';
 
 
 @Injectable() // Servicio y controlador en un solo archivo
@@ -27,6 +28,12 @@ export class UsuarioController {
 
     @InjectRepository(DatosUsuario)
     private readonly datosUsuarioRepository: Repository<DatosUsuario>,
+
+    @InjectRepository(Amistades)
+    private readonly amistadRepository: Repository<Amistades>,
+
+    @InjectRepository(Amigos)
+    private readonly amigosRepository: Repository<Amigos>,
 
     private readonly websocketGateway: WebsocketGateway
   ) {}
@@ -448,27 +455,82 @@ export class UsuarioController {
   @Get('listaUsuariosBusqueda')
   @UseGuards(JwtAuthGuard)
   async usuariosBusqueda(
-    @Req() req: any
+    @Req() req: any,
+    @Res() res: Response
   ) {
-    const idUsuario = req.usuario.id;
-    const all_usuarios = await this.usuarioRepository.find({ where: { estado: true, rol: {id: 2}, id: Not(idUsuario)}, relations: ['rol'] }); 
+    try {
+      const idUsuario = req.usuario?.id;
   
-    const usuarios = all_usuarios.map((usuario) => {  
-      return {
+      if (!idUsuario) {
+        return res.status(HttpStatus.BAD_REQUEST).json({
+          estado: false,
+          message: 'ID de usuario no proporcionado.',
+          icono: 'error',
+        });
+      }
+  
+      // Obtener todos los amigos del usuario
+      const all_amigos = await this.amigosRepository.find({
+        where: [
+          { usuario1: { id: idUsuario } },
+          { usuario2: { id: idUsuario } },
+        ],
+        relations: ['usuario1', 'usuario2'],
+      });
+  
+      const idsAmigos = all_amigos.map((amistad) =>
+        amistad.usuario1.id === idUsuario ? amistad.usuario2.id : amistad.usuario1.id
+      );
+  
+      // Obtener todas las solicitudes enviadas o recibidas por el usuario
+      const all_solicitudes = await this.amistadRepository.find({
+        where: [
+          { usuarioSol: { id: idUsuario } }, // Enviadas por el usuario actual
+          { usuarioRec: { id: idUsuario } }, // Recibidas por el usuario actual
+        ],
+        relations: ['usuarioSol', 'usuarioRec'],
+      });
+  
+      // Generar lista de IDs a excluir (amigos, solicitudes enviadas y recibidas)
+      const idsExcluidos = all_solicitudes.flatMap((solicitud) => [
+        solicitud.usuarioSol.id,
+        solicitud.usuarioRec.id,
+      ]);
+  
+      idsExcluidos.push(...idsAmigos, idUsuario); // Excluir amigos, solicitudes y al propio usuario
+  
+      // Buscar usuarios excluyendo los amigos, solicitudes y al propio usuario
+      const usuarios = await this.usuarioRepository.find({
+        where: {
+          estado: true,
+          rol: { id: 2 },
+          id: Not(In(idsExcluidos)),
+        },
+        relations: ['rol'],
+      });
+  
+      const usuariosFormateados = usuarios.map((usuario) => ({
         id: usuario.id,
         perfil: usuario.perfil,
         nombreUsuario: usuario.nombreUsuario,
         nombres: usuario.nombres,
         apellidos: usuario.apellidos,
-        rol : usuario.rol.id
-        //pais
-      };
-    });
+        rol: usuario.rol.id,
+        totalAmigos: idsAmigos.length,
+      }));
   
-    return {
-      estado: true,
-      usuarios,
-    };
+      return res.status(HttpStatus.OK).json({
+        estado: true,
+        usuarios: usuariosFormateados,
+      });
+  
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        estado: false,
+        message: `Error al buscar usuarios: ${error.message}`,
+        icono: 'error',
+      });
+    }
   }
 
   @Get('seleccionarUsuario/:idUsuario')
@@ -483,6 +545,15 @@ export class UsuarioController {
         where: { id: idUsuario },
         relations: ['rol'], // Asegúrate de que perfil también está relacionado si se usa
       });
+
+      const all_amigos = await this.amigosRepository.find({
+        where: [
+          { usuario1: { id: idUsuario } },
+        ],
+        relations: ['usuario1'], // Traer los datos de ambos usuarios
+      });
+
+      const totalAmigos = all_amigos.length;
   
       if (!g_usuario) {
         return res.status(HttpStatus.NOT_FOUND).json({
@@ -510,6 +581,7 @@ export class UsuarioController {
         rol: g_usuario.rol ? g_usuario.rol.nombre : 'Sin rol', // Validar rol
         perfil: g_usuario.perfil || 'Sin perfil', // Validar perfil
         conectado: conectado, // Validar conexión
+        totalAmigos: totalAmigos,
       };
   
       // Retornar respuesta exitosa
