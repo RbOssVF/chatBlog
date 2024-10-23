@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="es">
 {% include "principales/head.html" %}
+
+<style>
+  #divChatUsuario {
+    height: 430px;   /* Altura fija */
+    overflow-y: auto; /* Habilitar scroll vertical */
+  }
+</style>
+
 <body>
     <div class="container-scroller">
         {% include "principales/nav.html" %}
@@ -104,10 +112,17 @@
                           </div>
                       
                           <!-- Cuerpo del chat, donde se muestran los mensajes -->
-                          <div class="chat-messages mt-3" id="divChatUsuario">
+                          <div class="chat-messages mt-3 p-2" id="divChatUsuario">
+                            <div class="chat-messages mt-3 p-2 d-flex align-items-center justify-content-center">
+                              <div class="text-center">
+                                <img src="https://via.placeholder.com/150" class="img-fluid mb-3 rounded-circle" alt="Selecciona un amigo">
+                                <h5 class="text-muted">Selecciona un amigo para empezar a chatear</h5>
+                                <p class="text-muted">Haz clic en un amigo de la lista para iniciar una conversación.</p>
+                              </div>
+                            </div>
                           </div>
-                          <div class="" id="divEscribirMensajes">
-                            
+
+                          <div class="mt-2" id="divEscribirMensajes">
                           </div>
                         </div>
                       </div>

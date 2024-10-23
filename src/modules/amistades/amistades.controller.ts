@@ -106,7 +106,7 @@ export class AmistadesController {
                     apellidos: solicitud.usuarioSol.apellidos,
                     fechaSol: solicitud.fechaSolicitud,
                     nombreUsuario: solicitud.usuarioSol.nombreUsuario,
-                    estado: estadoUsuario.conectado, // Control de nulo
+                    estado: estadoUsuario ? estadoUsuario.conectado : true, // Control de nulo
                     perfil: solicitud.usuarioSol.perfil,
                   };
                 })
@@ -220,7 +220,7 @@ export class AmistadesController {
                         nombres: amigoData.nombres,
                         apellidos: amigoData.apellidos,
                         nombreUsuario: amigoData.nombreUsuario,
-                        estado: estadoUsuario?.conectado || true, // Control nulo con operador de coalescencia
+                        estado: estadoUsuario ? estadoUsuario.conectado : true, // Control nulo con operador de coalescencia
                         perfil: amigoData.perfil,
                         existe: existeMensaje, // true si ya existen mensajes, false si no
                     };
@@ -248,15 +248,52 @@ export class AmistadesController {
     ) {
         try {
             const idUsuario = req.usuario.id;
-
+            const limitCaracteres = 8;
             // Obtener los últimos mensajes donde el usuario es emisor o receptor, ordenados por fecha
             const g_usuarios_mensajes = await this.mensajesRepository
                 .createQueryBuilder('mensajes')
                 .innerJoin('usuario', 'u', 'u.id = mensajes.receptorId')
-                .select('DISTINCT u')  // Selecciona todos los campos de la tabla usuario
+                .select('DISTINCT u.id, u.nombres, u.apellidos, u.perfil, u.nombreUsuario') // Selecciona campos específicos
                 .where('mensajes.emisorId = :idUsuario', { idUsuario })
-                .getMany();
+                .getRawMany(); // Cambiar a getRawMany() para obtener resu
 
+            const usuarios = await Promise.all(
+                g_usuarios_mensajes.map(async (amigo) => {
+                    const idReceptor = amigo.id;
+
+                    const ultimoMensaje = await this.mensajesRepository
+                        .createQueryBuilder('mensajes')
+                        .select(['mensajes.texto AS texto', 'mensajes.fecha AS fecha'])
+                        .where(
+                            '(mensajes.emisorId = :idUsuario OR mensajes.receptorId = :idUsuario) ' +
+                            'AND (mensajes.emisorId = :idReceptor OR mensajes.receptorId = :idReceptor)',
+                            { idUsuario, idReceptor }
+                        )
+                        .orderBy('mensajes.fecha', 'DESC')
+                        .limit(1)
+                        .getRawOne();
+
+                    
+                    const textoLimitado = ultimoMensaje?.texto?.length > limitCaracteres
+                        ? `${ultimoMensaje.texto.slice(0, limitCaracteres)}...`
+                        : ultimoMensaje?.texto || 'No existe mensajes';
+
+                    return {
+                        id: amigo.id,
+                        nombres: amigo.nombres,
+                        apellidos: amigo.apellidos,
+                        nombreUsuario: amigo.nombreUsuario,
+                        perfil: amigo.perfil,
+                        ultimoMensaje: textoLimitado,
+                        fechaMensaje: ultimoMensaje ? formatearFechaRelativa(ultimoMensaje.fecha) : null,
+                    };
+                })
+            );
+
+            return res.status(HttpStatus.OK).json({
+                estado: true,
+                contactos: usuarios,
+            })
             
         } catch (error) {
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
