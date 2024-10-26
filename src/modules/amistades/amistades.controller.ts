@@ -7,6 +7,7 @@ import { DatosUsuario } from 'src/entidades/datosUsuario.entity';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
 import { Response } from 'express';
 import { JwtAuthGuard } from '../jwt/jwt-auth.guard'
+import { WebSocketGateway } from '@nestjs/websockets';
 
 @Injectable() // Servicio y controlador en un solo archivo
 @Controller('amistades')
@@ -252,10 +253,20 @@ export class AmistadesController {
             // Obtener los últimos mensajes donde el usuario es emisor o receptor, ordenados por fecha
             const g_usuarios_mensajes = await this.mensajesRepository
                 .createQueryBuilder('mensajes')
-                .innerJoin('usuario', 'u', 'u.id = mensajes.receptorId')
-                .select('DISTINCT u.id, u.nombres, u.apellidos, u.perfil, u.nombreUsuario') // Selecciona campos específicos
-                .where('mensajes.emisorId = :idUsuario', { idUsuario })
-                .getRawMany(); // Cambiar a getRawMany() para obtener resu
+                .innerJoin('usuario', 'u', 'u.id = mensajes.receptorId OR u.id = mensajes.emisorId')
+                .select([
+                    'u.id AS id',
+                    'u.nombres AS nombres',
+                    'u.apellidos AS apellidos',
+                    'u.perfil AS perfil',
+                    'u.nombreUsuario AS nombreUsuario',
+                    'MAX(mensajes.fecha) AS ultimaFecha'
+                ]) // Selección clara de campos
+                .where('(mensajes.emisorId = :idUsuario OR mensajes.receptorId = :idUsuario)', { idUsuario })
+                .andWhere('u.id != :idUsuario', { idUsuario }) // Excluir el mismo usuario
+                .groupBy('u.id, u.nombres, u.apellidos, u.perfil, u.nombreUsuario') // Agrupar por usuario
+                .orderBy('ultimaFecha', 'DESC') // Ordenar por la fecha más reciente
+                .getRawMany(); // Obtener resultados sin transformar
 
             const usuarios = await Promise.all(
                 g_usuarios_mensajes.map(async (amigo) => {
@@ -436,10 +447,21 @@ export class AmistadesController {
 
             await this.mensajesRepository.save(nuevo_mensaje);
 
+            const jsonMensaje = {
+                emisorId: idUsuario,
+                receptorId: v_receptor.id,
+                texto: cuerpo.texto,
+                fecha: new Date(),
+            };
+
+            this.websocketGateway.EnviarNotificacionUsuario(v_receptor.id, jsonMensaje);
+
             return res.status(HttpStatus.OK).json({
                 estado: true,
                 message: 'Mensaje enviado correctamente',
             })
+
+            
 
         } catch (error) {
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
@@ -448,6 +470,51 @@ export class AmistadesController {
             })
         }    
     }
+
+    @Post('eliminarAmistadUsuario/:idURecep')
+    @UseGuards(JwtAuthGuard)
+    async eliminarAmistadUsuario(
+        @Req() req: any,
+        @Res() res: Response,
+        @Param() id: { idURecep: number }
+    ) {
+        try {
+            
+            const idUsuario = req.usuario.id;
+
+            const v_receptor = await this.usuarioRepository.findOne({ where: { id: id.idURecep } });
+            if (!v_receptor) {
+                return res.status(HttpStatus.NOT_FOUND).json({
+                    estado: false,
+                    message: `El receptor no existe`,
+                })
+            }
+
+            const eliminarMensaje = await this.mensajesRepository
+                .createQueryBuilder()
+                .delete()
+                .from('mensajes') // Reemplaza 'Mensaje' con tu entidad de mensajes si es necesario
+                .where(
+                    '(emisorId = :idUsuario AND receptorId = :idURecep) OR (emisorId = :idURecep AND receptorId = :idUsuario)',
+                    { idUsuario, idURecep: id.idURecep }
+                )
+                .execute();
+
+            if (eliminarMensaje) {
+                return res.status(HttpStatus.OK).json({
+                    estado: true,
+                    message: 'Amistad eliminada correctamente',
+                })
+            }
+
+        } catch (error) {
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                estado: false,
+                message: `Error al obtener la lista de usuarios: ${error.message}`,
+            })
+        }    
+    }
+    
     
 }
 

@@ -199,7 +199,9 @@ function logout() {
     enviarPeticiones(`/usuarios/logout`, 'POST')
         .then(respuesta => {
             if (respuesta.estado) {
-                mandarNotificacion(respuesta.message, respuesta.icono)                
+                mandarNotificacion(respuesta.message, respuesta.icono)
+                //eliminar localStorage
+                localStorage.clear();                
                 window.location.href = '/';
                 
             }

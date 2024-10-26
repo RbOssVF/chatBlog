@@ -11,6 +11,24 @@ const modalAbrirNuevoChat = new bootstrap.Modal(document.getElementById("modalAb
 
 document.addEventListener("DOMContentLoaded", function () {
 
+    //vaciar del ocalstorage chatActivo
+    sessionStorage.removeItem('chatActivo');
+    //registrarpagina de inicio
+    sessionStorage.setItem('pagina', 'inicio');
+
+    conectarWSIo();
+
+    socket.on('mensajePrivado', (mensaje) => {
+        console.log('Mensaje privado recibido:', mensaje);
+        mandarNotificacion(`Nuevo mensaje: ${mensaje.texto}`, 'success');
+
+        // Recargar el chat si está activo con el emisor
+        const chatActivo = sessionStorage.getItem('chatActivo');
+        if (chatActivo && chatActivo === String(mensaje.emisorId)) {
+            verChatUsuario(mensaje.emisorId); // Recargar el chat automáticamente
+        }
+    });
+
     mostrarListaMensajes();
 
     if (btnSubirImagen && inpImagen && btnConfirmar && inpDetallesImagen && cambiarEstadoConectado && formularioUpdateDatos) {
@@ -186,18 +204,27 @@ async function mostrarListaMensajes() {
                         <div class="user-thumbnail me-3">
                             <img class="img-xs rounded-circle" src="/images/perfiles/${dato.perfil}" alt="${dato.nombreUsuario}">
                         </div>
-                        <div class="preview-item-content d-sm-flex flex-grow">
-                        <div class="flex-grow">
-                            <h6 class="preview-subject">${dato.nombreUsuario}</h6>
-                            <p class="text-muted mb-0">${dato.ultimoMensaje}</p>
-                        </div>
-                        <div class="mr-auto text-sm-right pt-2 pt-sm-0">
-                            <p class="text-white text-end"><a href="" type="button" class="text-white text-decoration-none">...</a></p>
-                            <p class="text-muted mb-0">${dato.fechaMensaje}</p>
-                        </div>
+                        <div class="preview-item-content d-flex flex-column flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="preview-subject mb-0">${dato.nombreUsuario}</h6>
+                                <p class="text-muted small mb-0">${dato.fechaMensaje}</p>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <p class="text-muted mb-0 text-truncate" style="max-width: 80%;">${dato.ultimoMensaje}</p>
+                                <div class="dropdown">
+                                    <a href="#" class="text-white text-decoration-none" 
+                                    id="dropdownMenuLink${dato.id}" 
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                        ...
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuLink${dato.id}">
+                                        <li><a class="dropdown-item" href="#" onclick="eliminarMensajeUsuario('${dato.id}')">Eliminar mensaje</a></li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
                     </button>
-                `
+                `;
             });
 
             divListaMensajes.innerHTML = html;
@@ -238,11 +265,25 @@ async function empezarChat(idURecep) {
 
 async function verChatUsuario(idUsuarioRecep) {
     modalAbrirNuevoChat.hide();
+
+    sessionStorage.setItem('chatActivo', idUsuarioRecep);
+
     const url = `/amistades/verChat/${idUsuarioRecep}/`;
     let html = ``;
     const divChatUsuario = document.querySelector('#divChatUsuario');
     const divDatosRecep = document.querySelector('#divDatosRecep');
     const divEscribirMensajes = document.querySelector('#divEscribirMensajes');
+
+    divChatUsuario.innerHTML = `
+        <div class="chat-messages mt-3 p-2">
+            <div class="chat-messages mt-3 p-2 d-flex align-items-center justify-content-center">
+                <div class="text-center">
+                <h5 class="text-muted">Selecciona un amigo para empezar a chatear</h5>
+                <p class="text-muted">Haz clic en un amigo de la lista para iniciar una conversación.</p>
+                </div>
+            </div>
+        </div>
+    `
 
     try {
         const respuesta = await enviarPeticiones(url);
@@ -333,6 +374,18 @@ async function enviarMensaje(idUsuarioRecep) {
             mostrarListaMensajes();
         }
     } catch (error) {   
+        console.log(error);
+    }
+}
+
+async function eliminarMensajeUsuario(idUsuarioRecep) {
+    const url = `/amistades/eliminarAmistadUsuario/${idUsuarioRecep}/`;
+    try {
+        const respuesta = await enviarPeticiones(url, 'POST');
+        if (respuesta.estado) {
+            mostrarListaMensajes();
+        }
+    } catch (error) {
         console.log(error);
     }
 }

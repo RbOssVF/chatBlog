@@ -2,13 +2,24 @@ import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDiscon
 import { Server, Socket } from 'socket.io';
 
 //habilitar cors websocket
-@WebSocketGateway()
+@WebSocketGateway({
+    cors: {
+        origin: '*', // Permitir CORS si es necesario
+    },
+})
 
 export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer() server: Server;
 
     handleConnection(client: Socket) {
-        console.log(`Cliente conectado: ${client.id}`);
+        const userId = client.handshake.query.userId; // Obtener el userId del cliente
+    
+        if (userId) {
+            client.join(`user_${userId}`); // Unir al cliente a la sala basada en su ID
+            console.log(`Usuario ${userId} conectado en la sala user_${userId}`);
+        } else {
+            console.log(`Error: No se proporcionó un userId en la query.`);
+        }
     }
 
     handleDisconnect(client: Socket) {
@@ -23,7 +34,8 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     handleError(client: Socket, error: Error) {
         console.error(`Error en la conexión: ${error.message}`);
     }
-    EnviarNotificaciones(jsonNotificaciones: any) {
-        this.server.emit('nuevoUsuario', jsonNotificaciones);
+    EnviarNotificacionUsuario(userId: number, mensaje: any) {
+        console.log(`Enviando mensaje a user_${userId}:`, mensaje);
+        this.server.to(`user_${userId}`).emit('mensajePrivado', mensaje); // Enviar a la sala específica
     }
 }

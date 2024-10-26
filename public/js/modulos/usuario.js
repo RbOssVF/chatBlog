@@ -1,10 +1,12 @@
 const fromLogin = document.getElementById('formLogin');
 const fromRegistro = document.getElementById('formRegistro');
 
+
 //inicio de pagina
 document.addEventListener("DOMContentLoaded", function () {
 
     // eliminar todo el localStorage
+    localStorage.clear();
 
     // mandarNotificacion('Hola', 'error')
     fromLogin.addEventListener('submit', (event) => {
@@ -27,6 +29,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (respuesta.estado) {
                     fromLogin.reset();
                     document.cookie = `token=${respuesta.token}; path=/`;
+
+                    sessionStorage.setItem('token', respuesta.token);
+                    sessionStorage.setItem('usuarioId', respuesta.usuarioId);
+
                     window.location.href = '/inicio';
                 }
                 mandarNotificacion(respuesta.message, respuesta.icono)
@@ -80,3 +86,5 @@ document.addEventListener("DOMContentLoaded", function () {
 
     });
 });
+
+
