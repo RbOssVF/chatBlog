@@ -72,6 +72,18 @@ export class Mensajes {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   fecha: Date;
 
+  @Column({ type: 'boolean', default: false })
+  vistoPorEmisor: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  vistoPorReceptor: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  eliminadoPorEmisor: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  eliminadoPorReceptor: boolean;
+
   @ManyToOne(() => Usuario, (usuario) => usuario.mensajesEmisor)
   @JoinColumn({ name: 'emisorId' })
   emisor: Usuario;

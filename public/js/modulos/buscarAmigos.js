@@ -1,6 +1,12 @@
 const busquedaUsuarios = document.getElementById('busquedaUsuarios');
 
 document.addEventListener("DOMContentLoaded", function () {
+
+    //borrar pagina inicio
+    sessionStorage.removeItem('pagina', 'inicio');
+    sessionStorage.setItem('pagina', 'buscarAmigos');
+
+    conectarWSIo();
     listarUsuariosBusqueda();
 })
 

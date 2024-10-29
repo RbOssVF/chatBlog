@@ -1,8 +1,22 @@
 const userId = sessionStorage.getItem('usuarioId');
 
-const socket = io('http://localhost:3000', {
+const socket = io('/', {
     autoConnect: false, // No conectes automáticamente al cargar el archivo
     query: { userId }, // Enviar el ID del usuario en la query
+});
+
+
+document.addEventListener("DOMContentLoaded", function () {
+    socket.on('mensajePrivado', (mensaje) => {
+        console.log('Mensaje privado recibido:', mensaje);
+
+        mandarNotificacion(`Nuevo mensaje: ${mensaje.texto} de: ${mensaje.usuarioEmisor}`, 'success');
+
+        const paginaInicio = sessionStorage.getItem('pagina');
+        if (paginaInicio === 'inicio') {
+            mostrarListaMensajes();
+        }
+    });
 });
 
 
@@ -24,9 +38,11 @@ function conectarSocket(token) {
 function conectarWSIo() {
 
     const token = sessionStorage.getItem('token'); // Obtener el token de las cookies
-
     if (token) {
         conectarSocket(token); // Conectar al WebSocket si hay un token
     }
 }
+
+
+
 

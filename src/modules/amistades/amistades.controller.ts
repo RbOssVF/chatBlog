@@ -431,10 +431,13 @@ export class AmistadesController {
         try {
             const idUsuario = req.usuario.id;
             const v_receptor = await this.usuarioRepository.findOne({ where: { id: receptor.idUsuarioRecep } });
+            const d_emisor = await this.usuarioRepository.findOne({ where: { id: idUsuario } });
+
             if (!v_receptor) {
                 return res.status(HttpStatus.NOT_FOUND).json({
                     estado: false,
                     message: `El receptor no existe`,
+                    icono: 'error',
                 })
             }
 
@@ -449,6 +452,7 @@ export class AmistadesController {
 
             const jsonMensaje = {
                 emisorId: idUsuario,
+                usuarioEmisor : d_emisor.nombreUsuario,
                 receptorId: v_receptor.id,
                 texto: cuerpo.texto,
                 fecha: new Date(),
@@ -459,6 +463,7 @@ export class AmistadesController {
             return res.status(HttpStatus.OK).json({
                 estado: true,
                 message: 'Mensaje enviado correctamente',
+                icono: 'success',
             })
 
             
@@ -467,6 +472,7 @@ export class AmistadesController {
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
                 estado: false,
                 message: `Error al obtener la lista de usuarios: ${error.message}`,
+                icono: 'error',
             })
         }    
     }
@@ -514,7 +520,61 @@ export class AmistadesController {
             })
         }    
     }
-    
+
+    @Get('nuevosMensajes')
+    @UseGuards(JwtAuthGuard)
+    async nuevosMensajes(@Req() req: any, @Res() res: Response) {
+        try {
+            const idUsuario = req.usuario.id; // Obtener el ID del usuario autenticado
+
+            const mensajesNoLeidos = await this.mensajesRepository.query(`
+                SELECT 
+                    ue.id AS id,
+                    ue.perfil AS perfil,
+                    ue.nombreUsuario AS nombreUsuario,
+                    m.fecha AS fecha,
+                    m.texto AS texto
+                FROM mensajes m
+                INNER JOIN usuario ue ON ue.id = m.emisorId
+                WHERE m.receptorId = ?
+                AND m.fecha = (
+                    SELECT MAX(m2.fecha)
+                    FROM mensajes m2
+                    WHERE m2.emisorId = m.emisorId
+                        AND m2.receptorId = ?
+                )
+                AND m.vistoPorReceptor = false
+                ORDER BY m.fecha DESC
+            `, [idUsuario, idUsuario]); // Pasar los parámetros correctamente
+
+            
+            const mensajes = await mensajesNoLeidos.map((m) => {
+                const fecha_format = formatearFechaRelativa(new Date(m.fecha));
+                return {
+                    id: m.id,
+                    perfil: m.perfil,
+                    nombreUsuario: m.nombreUsuario,
+                    texto: m.texto,
+                    fecha: fecha_format,
+                };
+            })
+
+            console.log("mensajesNoLeidos", mensajes);
+
+
+            return res.status(HttpStatus.OK).json({
+                estado: true,
+                mensajes: mensajes,
+            });
+
+        } catch (error) {
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                estado: false,
+                message: `Error al obtener los mensajes: ${error.message}`,
+            });
+        }
+    }
+
     
 }
 

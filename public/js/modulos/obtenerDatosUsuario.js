@@ -4,6 +4,7 @@
 document.addEventListener("DOMContentLoaded", function () {
     obtenerDatosUsuario();
     obtenerSolicitudes();
+    obtenerNuevosMensajes();
 })
 
 function obtenerDatosUsuario() {
@@ -209,4 +210,42 @@ function logout() {
         .catch(error => {
             console.error(error);
         });
+}
+
+async function obtenerNuevosMensajes() {
+    const urlServer = `amistades/nuevosMensajes/`;
+    const nuevosMensajesUsuarios = document.querySelector('#nuevosMensajesUsuarios');
+    let html = ''
+    try {
+
+        const respuesta = await enviarPeticiones(urlServer);
+        if (respuesta.estado) {
+            
+            respuesta.mensajes.map((usuario) => {
+                html += `
+                    <a class="dropdown-item preview-item" onclick="verChatUsuarioUrl(${usuario.id})">
+                        <div class="preview-thumbnail">
+                            <img src="/images/perfiles/${usuario.perfil}" alt="image"
+                                class="rounded-circle profile-pic">
+                        </div>
+                        <div class="preview-item-content">
+                            <p class="preview-subject ellipsis mb-1">${usuario.nombreUsuario} te envio un mensaje</p>
+                            <p class="text-muted mb-0">${usuario.fecha}</p>
+                        </div>
+                    </a>
+                `; 
+            })
+
+            nuevosMensajesUsuarios.innerHTML = html
+        }
+
+    } catch (error) {
+        nuevosMensajesUsuarios.innerHTML = `<div class="text-center">
+            <h6>No hay solicitudes</h6>
+        </div>`
+    }
+}
+
+function verChatUsuarioUrl(idReceptor) {
+    window.location.href = `inicio?usuario=${idReceptor}`; // Redirige con un query parameter
 }

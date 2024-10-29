@@ -3,7 +3,7 @@ const notyf = new Notyf({
         x: 'right', // 'left' o 'right'
         y: 'top',   // 'top' o 'bottom'
     },
-    duration: 2000, // Duración en milisegundos (5 segundos)
+    duration: 3000, // Duración en milisegundos (5 segundos)
 });
 
 

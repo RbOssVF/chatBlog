@@ -1,5 +1,4 @@
 //iniciar pagina
-
 const btnSubirImagen = document.querySelector('.file-upload-browse');
 const inpImagen = document.querySelector('.file-upload-default');
 const inpDetallesImagen = document.querySelector('.file-upload-info');
@@ -11,24 +10,12 @@ const modalAbrirNuevoChat = new bootstrap.Modal(document.getElementById("modalAb
 
 document.addEventListener("DOMContentLoaded", function () {
 
-    //vaciar del ocalstorage chatActivo
-    sessionStorage.removeItem('chatActivo');
-    //registrarpagina de inicio
     sessionStorage.setItem('pagina', 'inicio');
-
+    
     conectarWSIo();
 
-    socket.on('mensajePrivado', (mensaje) => {
-        console.log('Mensaje privado recibido:', mensaje);
-        mandarNotificacion(`Nuevo mensaje: ${mensaje.texto}`, 'success');
-
-        // Recargar el chat si está activo con el emisor
-        const chatActivo = sessionStorage.getItem('chatActivo');
-        if (chatActivo && chatActivo === String(mensaje.emisorId)) {
-            verChatUsuario(mensaje.emisorId); // Recargar el chat automáticamente
-        }
-    });
-
+    // Obtener el ID del receptor desde la URL
+    obtenerIdDesdeURL()
     mostrarListaMensajes();
 
     if (btnSubirImagen && inpImagen && btnConfirmar && inpDetallesImagen && cambiarEstadoConectado && formularioUpdateDatos) {
@@ -154,7 +141,7 @@ async function contruirListaAmigosChat() {
                                     </div>
                                     <div class="mr-auto text-sm-right pt-2 pt-sm-0">
                                         ${amigo.existe ? 
-                                            `<button class="btn btn-success btn-icon" onclick="verChatUsuario(${amigo.id})"><i class="mdi mdi-message-text-outline"></i></button>` : 
+                                            `<button class="btn btn-success btn-icon" onclick="mostrarListaMensajes(${amigo.id})"><i class="mdi mdi-message-text-outline"></i></button>` : 
                                             `<button class="btn btn-warning btn-icon" onclick="empezarChat(${amigo.id})"><i class="mdi mdi-human-greeting"></i></button>`}
                                     </div>
                                 </div>
@@ -173,7 +160,9 @@ async function contruirListaAmigosChat() {
     }
 }
 
-async function mostrarListaMensajes() {
+async function mostrarListaMensajes(idReceptor = null) {
+    console.log(idReceptor);
+    
     const url = `/amistades/listaMensajes/`;
     let html = ''
     const divListaMensajes = document.querySelector('#divListaMensajes');
@@ -192,12 +181,24 @@ async function mostrarListaMensajes() {
                 return;
             }
 
-            const idPrimerUsuario = respuesta.contactos[0].id;
-            verChatUsuario(idPrimerUsuario);
+            if (idReceptor != null) {
+                verChatUsuario(idReceptor);
+            }else {
+                const idPrimerUsuario = respuesta.contactos[0].id;
+                verChatUsuario(idPrimerUsuario);
+            }
+
+            
 
             respuesta.contactos.forEach((dato, index) => {
 
-                const activeClass = index === 0 ? 'active' : '';
+                let activeClass = '';
+
+                if (idReceptor != null) {
+                    activeClass = dato.id === idReceptor ? 'active' : '';
+                }else{
+                    activeClass = index === 0 ? 'active' : '';
+                }
 
                 html += `
                     <button type="button" class="${activeClass} list-group-item list-group-item-action d-flex align-items-center p-3 mb-2 rounded border-0 btn-list-custom" aria-current="true" onclick="verChatUsuario('${dato.id}')">
@@ -265,8 +266,6 @@ async function empezarChat(idURecep) {
 
 async function verChatUsuario(idUsuarioRecep) {
     modalAbrirNuevoChat.hide();
-
-    sessionStorage.setItem('chatActivo', idUsuarioRecep);
 
     const url = `/amistades/verChat/${idUsuarioRecep}/`;
     let html = ``;
@@ -370,8 +369,7 @@ async function enviarMensaje(idUsuarioRecep) {
     try {
         const respuesta = await enviarPeticiones(url, 'POST', jsonCuerpo);
         if (respuesta.estado) {
-            verChatUsuario(idUsuarioRecep);
-            mostrarListaMensajes();
+            mostrarListaMensajes(idUsuarioRecep);
         }
     } catch (error) {   
         console.log(error);
@@ -391,3 +389,14 @@ async function eliminarMensajeUsuario(idUsuarioRecep) {
 }
 
 //permitir solo imagenes
+
+
+function obtenerIdDesdeURL() {
+    const urlParams = new URLSearchParams(window.location.search); // Leer los parámetros de la URL
+    const idReceptor = urlParams.get('usuario'); // Obtener el ID del receptor
+    if (idReceptor) {
+        setTimeout(() => {
+            mostrarListaMensajes(parseInt(idReceptor));
+        }, 1500);
+    }
+} 
