@@ -395,10 +395,14 @@ export class AmistadesController {
 
             const mensajes = g_mensajes.map((mensaje) => {
                 const fecha_format = formatearFechaRelativa(new Date(mensaje.fecha));
+                let estadoMensaje = ''
+
                 return {
                     id: mensaje.id,
                     emisorId: mensaje.emisorId,
                     receptorId: mensaje.receptorId,
+                    vistoPorRecep : mensaje.vistoPorReceptor,
+                    vistoPorEmisor : mensaje.vistoPorEmisor,
                     idUsuario : idUsuario,
                     texto: mensaje.texto,
                     fecha: fecha_format,
@@ -543,7 +547,7 @@ export class AmistadesController {
                     WHERE m2.emisorId = m.emisorId
                         AND m2.receptorId = ?
                 )
-                AND m.vistoPorReceptor = false
+                AND m.vistoPorEmisor = false
                 ORDER BY m.fecha DESC
             `, [idUsuario, idUsuario]); // Pasar los parámetros correctamente
 
@@ -559,9 +563,6 @@ export class AmistadesController {
                 };
             })
 
-            console.log("mensajesNoLeidos", mensajes);
-
-
             return res.status(HttpStatus.OK).json({
                 estado: true,
                 mensajes: mensajes,
@@ -575,7 +576,58 @@ export class AmistadesController {
         }
     }
 
+    @Post('verChatUsuario/:idReceptor')
+    @UseGuards(JwtAuthGuard)
+    async verChatUsuario(
+        @Req() req: any,
+        @Res() res: Response,
+        @Param() id: { idReceptor: number }
+    ) {
+        try {
+            
+            const idUsuario = req.usuario.id;
+
+            const v_receptor = await this.usuarioRepository.findOne({ where: { id: id.idReceptor } });
+            if (!v_receptor) {
+                return res.status(HttpStatus.NOT_FOUND).json({
+                    estado: false,
+                    message: `El receptor no existe`,
+                })
+            }
+
+            const actualizarMensaje = await this.mensajesRepository
+                .createQueryBuilder()
+                .update('mensajes')
+                .set({ vistoPorEmisor: true })
+                .where(
+                    'receptorId = :idUsuario AND emisorId = :idURecep AND vistoPorEmisor = 0',
+                    { idUsuario, idURecep: v_receptor.id }
+                )
+                .execute();
+
+            if (actualizarMensaje) {
+
+                const jsonMensaje = {
+                    elQuevio: idUsuario,
+                    elQueMando: v_receptor.id,
+                };
     
+                this.websocketGateway.EnviarVistoUsuario(v_receptor.id, jsonMensaje);
+
+                return res.status(HttpStatus.OK).json({
+                    estado: true,
+                    message: 'Chat actualizado correctamente',
+                })
+            }
+            
+
+        } catch (error) {
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                estado: false,
+                message: `Error al obtener la lista de usuarios: ${error.message}`,
+            })
+        }
+    }
 }
 
 

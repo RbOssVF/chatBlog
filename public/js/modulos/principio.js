@@ -11,7 +11,8 @@ const modalAbrirNuevoChat = new bootstrap.Modal(document.getElementById("modalAb
 document.addEventListener("DOMContentLoaded", function () {
 
     sessionStorage.setItem('pagina', 'inicio');
-    
+    sessionStorage.removeItem('chatActivo');
+
     conectarWSIo();
 
     // Obtener el ID del receptor desde la URL
@@ -160,8 +161,7 @@ async function contruirListaAmigosChat() {
     }
 }
 
-async function mostrarListaMensajes(idReceptor = null) {
-    console.log(idReceptor);
+async function mostrarListaMensajes() {
     
     const url = `/amistades/listaMensajes/`;
     let html = ''
@@ -181,27 +181,9 @@ async function mostrarListaMensajes(idReceptor = null) {
                 return;
             }
 
-            if (idReceptor != null) {
-                verChatUsuario(idReceptor);
-            }else {
-                const idPrimerUsuario = respuesta.contactos[0].id;
-                verChatUsuario(idPrimerUsuario);
-            }
-
-            
-
             respuesta.contactos.forEach((dato, index) => {
-
-                let activeClass = '';
-
-                if (idReceptor != null) {
-                    activeClass = dato.id === idReceptor ? 'active' : '';
-                }else{
-                    activeClass = index === 0 ? 'active' : '';
-                }
-
                 html += `
-                    <button type="button" class="${activeClass} list-group-item list-group-item-action d-flex align-items-center p-3 mb-2 rounded border-0 btn-list-custom" aria-current="true" onclick="verChatUsuario('${dato.id}')">
+                    <button type="button" class="list-group-item list-group-item-action d-flex align-items-center p-3 mb-2 rounded border-0 btn-list-custom" aria-current="true" onclick="verChatUsuario('${dato.id}')">
                         <div class="user-thumbnail me-3">
                             <img class="img-xs rounded-circle" src="/images/perfiles/${dato.perfil}" alt="${dato.nombreUsuario}">
                         </div>
@@ -253,7 +235,7 @@ async function empezarChat(idURecep) {
         const repuesta = await enviarPeticiones(url, 'POST', jsonCuerpo);
 
         if (repuesta.estado) {
-            mostrarListaMensajes();
+            verChatUsuario(idURecep);
         }
         mandarNotificacion(repuesta.message, repuesta.icono)
 
@@ -267,11 +249,13 @@ async function empezarChat(idURecep) {
 async function verChatUsuario(idUsuarioRecep) {
     modalAbrirNuevoChat.hide();
 
-    const url = `/amistades/verChat/${idUsuarioRecep}/`;
-    let html = ``;
+    verChatUsuarioUrl(idUsuarioRecep);
+
+    sessionStorage.setItem('chatActivo', idUsuarioRecep);
+
     const divChatUsuario = document.querySelector('#divChatUsuario');
-    const divDatosRecep = document.querySelector('#divDatosRecep');
-    const divEscribirMensajes = document.querySelector('#divEscribirMensajes');
+    
+    crearChatUsuario(idUsuarioRecep);
 
     divChatUsuario.innerHTML = `
         <div class="chat-messages mt-3 p-2">
@@ -282,7 +266,16 @@ async function verChatUsuario(idUsuarioRecep) {
                 </div>
             </div>
         </div>
-    `
+    `;
+}
+
+async function crearChatUsuario(idReceptor) {
+
+    const url = `/amistades/verChat/${idReceptor}/`;
+    let html = ``;
+    const divChatUsuario = document.querySelector('#divChatUsuario');
+    const divDatosRecep = document.querySelector('#divDatosRecep');
+    const divEscribirMensajes = document.querySelector('#divEscribirMensajes');
 
     try {
         const respuesta = await enviarPeticiones(url);
@@ -304,19 +297,16 @@ async function verChatUsuario(idUsuarioRecep) {
 
             respuesta.mensajes.forEach((dato) => {
                 html += `
-                    ${dato.idUsuario === dato.emisorId ? `
-                        <div class="d-flex flex-row-reverse mb-2">
-                            <div class="p-2 bg-primary text-white rounded">
-                                <p class="mb-0">${dato.texto}</p>
-                            </div>
+                    <div class="d-flex ${dato.idUsuario === dato.emisorId ? 'flex-row-reverse' : 'flex-row'} mb-1 chat-mensaje" data-id="${dato.idMensaje}">
+                        <div class="p-2 ${dato.idUsuario === dato.emisorId ? 'bg-primary text-white' : 'bg-light text-dark'} rounded" style="cursor: pointer;">
+                            <p class="mb-0">${dato.texto}</p>
                         </div>
-                    ` : `
-                        <div class="d-flex flex-row mb-2">
-                            <div class="p-2 bg-light rounded text-dark">
-                                <p class="mb-0">${dato.texto}</p>
+                        ${dato.idUsuario === dato.emisorId ? `
+                            <div class="d-flex align-items-center me-2">
+                                <span class="text-muted small visto-estado fw-bold  " style="display: none;">${dato.vistoPorEmisor ? 'Visto' : 'Enviado'}</span>
                             </div>
-                        </div>
-                    `}
+                        ` : ''}
+                    </div>
                 `;
             });
 
@@ -341,6 +331,11 @@ async function verChatUsuario(idUsuarioRecep) {
             const frmEnviarMensaje = document.querySelector('#frmEnviarMensaje');
             const txtEnviar = document.querySelector('#txtEnviar');
 
+
+            txtEnviar.addEventListener('click', () => {
+                verChatUsuarioUrl(idReceptor); // Llama a la función solo al hacer clic en el textarea
+            });
+            
             // Evitar salto de línea y enviar mensaje al presionar Enter
             txtEnviar.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -352,13 +347,38 @@ async function verChatUsuario(idUsuarioRecep) {
             // Enviar el mensaje
             frmEnviarMensaje.addEventListener('submit', (e) => {
                 e.preventDefault();
-                enviarMensaje(idUsuarioRecep);
+                enviarMensaje(idReceptor);
                 txtEnviar.value = ''; // Limpiar el campo después de enviar
+            });
+
+            document.querySelectorAll('.chat-mensaje').forEach((element) => {
+                element.addEventListener('click', function() {
+                    const estado = this.querySelector('.visto-estado');
+                    if (estado) {
+                        estado.style.display = estado.style.display === 'none' ? 'inline' : 'none';
+                    }
+                });
             });
         }
     } catch (error) {
         console.log(error);
     }
+}
+
+
+function verChatUsuarioUrl(idReceptor) {
+
+    const url = `amistades/verChatUsuario/${idReceptor}/`;
+
+    enviarPeticiones(url, 'POST')
+        .then(respuesta => {
+            if (respuesta.estado) {
+                console.log('Chat abierto');
+            }
+        })
+        .catch(error => {
+            console.error(error);
+        });
 }
 
 async function enviarMensaje(idUsuarioRecep) {
@@ -369,7 +389,7 @@ async function enviarMensaje(idUsuarioRecep) {
     try {
         const respuesta = await enviarPeticiones(url, 'POST', jsonCuerpo);
         if (respuesta.estado) {
-            mostrarListaMensajes(idUsuarioRecep);
+            verChatUsuario(idUsuarioRecep);
         }
     } catch (error) {   
         console.log(error);

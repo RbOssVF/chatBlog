@@ -247,5 +247,16 @@ async function obtenerNuevosMensajes() {
 }
 
 function verChatUsuarioUrl(idReceptor) {
-    window.location.href = `inicio?usuario=${idReceptor}`; // Redirige con un query parameter
+
+    const url = `amistades/verChatUsuario/${idReceptor}/`;
+
+    enviarPeticiones(url, 'POST')
+        .then(respuesta => {
+            if (respuesta.estado) {
+                window.location.href = `inicio?usuario=${idReceptor}`; // Redirige con un query parameter
+            }
+        })
+        .catch(error => {
+            console.error(error);
+        });
 }

@@ -38,4 +38,8 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
         console.log(`Enviando mensaje a user_${userId}:`, mensaje);
         this.server.to(`user_${userId}`).emit('mensajePrivado', mensaje); // Enviar a la sala específica
     }
+    EnviarVistoUsuario(userId: number, mensajeVisto: any) {
+        console.log(`Enviando visto a user_${userId}`);
+        this.server.to(`user_${userId}`).emit('mensajeVisto', mensajeVisto); // Enviar a la sala específica
+    }
 }

@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", function () {
     //borrar pagina inicio
     sessionStorage.removeItem('pagina', 'inicio');
     sessionStorage.setItem('pagina', 'buscarAmigos');
+    sessionStorage.removeItem('chatActivo');
 
     conectarWSIo();
     listarUsuariosBusqueda();

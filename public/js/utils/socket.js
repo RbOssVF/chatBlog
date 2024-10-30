@@ -17,6 +17,19 @@ document.addEventListener("DOMContentLoaded", function () {
             mostrarListaMensajes();
         }
     });
+
+    socket.on('mensajeVisto', (mensaje) => {
+        console.log('Mensaje recibido:', mensaje);
+        const chatActivo = sessionStorage.getItem('chatActivo');
+        const paginaInicio = sessionStorage.getItem('pagina');
+
+        if (chatActivo && paginaInicio === 'inicio') {
+            if (parseInt(chatActivo) === mensaje.elQuevio) {
+                console.log('entro aqui');
+                crearChatUsuario(mensaje.elQuevio)
+            }
+        }
+    });
 });
 
 
