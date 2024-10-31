@@ -5,6 +5,7 @@ const inpDetallesImagen = document.querySelector('.file-upload-info');
 const btnConfirmar = document.querySelector('#btnConfirmar');
 const cambiarEstadoConectado = document.querySelector('#cambiarEstadoConectado');
 const formularioUpdateDatos = document.querySelector('#formUpdateDatos');
+const inpBucarAmigos = document.querySelector('#inpBucarAmigos');
 
 const modalAbrirNuevoChat = new bootstrap.Modal(document.getElementById("modalAbrirNuevoChat"));
 
@@ -13,6 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
     sessionStorage.setItem('pagina', 'inicio');
     sessionStorage.removeItem('chatActivo');
 
+    actualizarMensajesCadaMin();
     conectarWSIo();
 
     // Obtener el ID del receptor desde la URL
@@ -93,6 +95,19 @@ document.addEventListener("DOMContentLoaded", function () {
         });
         
     }
+
+    inpBucarAmigos.addEventListener('keyup', (event) => {
+        const divMensajeEncontrados = document.getElementById('divMensajeEncontrados');
+        const texto = event.target.value;
+        if (texto === '') {
+            divMensajeEncontrados.innerHTML = ``;
+            divMensajeEncontrados.style.display = 'none';
+            return;
+        }
+        divMensajeEncontrados.style.display = 'block';
+        buscarMensajesUsuarios(texto);
+    });
+    
 })
 
 function updateConectado(estado) {
@@ -142,7 +157,7 @@ async function contruirListaAmigosChat() {
                                     </div>
                                     <div class="mr-auto text-sm-right pt-2 pt-sm-0">
                                         ${amigo.existe ? 
-                                            `<button class="btn btn-success btn-icon" onclick="mostrarListaMensajes(${amigo.id})"><i class="mdi mdi-message-text-outline"></i></button>` : 
+                                            `<button class="btn btn-success btn-icon" onclick="empezarChatExistente(${amigo.id})"><i class="mdi mdi-message-text-outline"></i></button>` : 
                                             `<button class="btn btn-warning btn-icon" onclick="empezarChat(${amigo.id})"><i class="mdi mdi-human-greeting"></i></button>`}
                                     </div>
                                 </div>
@@ -161,7 +176,18 @@ async function contruirListaAmigosChat() {
     }
 }
 
-async function mostrarListaMensajes() {
+async function empezarChatExistente(idReceptor) {
+
+    const inpBucarAmigos = document.getElementById('inpBucarAmigos');
+    divMensajeEncontrados.style.display = 'none';
+    inpBucarAmigos.value = '';
+
+    mostrarListaMensajes(idReceptor);
+    verChatUsuario(idReceptor);
+}
+
+
+async function mostrarListaMensajes(idReceptor = null) {
     
     const url = `/amistades/listaMensajes/`;
     let html = ''
@@ -182,8 +208,15 @@ async function mostrarListaMensajes() {
             }
 
             respuesta.contactos.forEach((dato, index) => {
+
+                let dataActive = ''
+
+                if (idReceptor != null) {
+                    dataActive = idReceptor === dato.id ? 'active' : ''
+                }
+
                 html += `
-                    <button type="button" class="list-group-item list-group-item-action d-flex align-items-center p-3 mb-2 rounded border-0 btn-list-custom" aria-current="true" onclick="verChatUsuario('${dato.id}')">
+                    <button type="button" class="list-group-item list-group-item-action ${dataActive} d-flex align-items-center p-3 mb-2 rounded border-0 btn-list-custom" aria-current="true" onclick="verChatUsuario('${dato.id}')">
                         <div class="user-thumbnail me-3">
                             <img class="img-xs rounded-circle" src="/images/perfiles/${dato.perfil}" alt="${dato.nombreUsuario}">
                         </div>
@@ -193,7 +226,7 @@ async function mostrarListaMensajes() {
                                 <p class="text-muted small mb-0">${dato.fechaMensaje}</p>
                             </div>
                             <div class="d-flex justify-content-between align-items-center">
-                                <p class="text-muted mb-0 text-truncate" style="max-width: 80%;">${dato.ultimoMensaje}</p>
+                                <p class="text-muted mb-0 text-truncate" style="max-width: 80%;">${dato.emisorId == dato.idUsuario ? 'Tu: ' : '' } ${dato.ultimoMensaje}</p>
                                 <div class="dropdown">
                                     <a href="#" class="text-white text-decoration-none" 
                                     id="dropdownMenuLink${dato.id}" 
@@ -228,6 +261,11 @@ async function mostrarListaMensajes() {
 
 async function empezarChat(idURecep) {
     const url = `/amistades/empezarChat/${idURecep}/`;
+
+    const inpBucarAmigos = document.getElementById('inpBucarAmigos');
+    divMensajeEncontrados.style.display = 'none';
+    inpBucarAmigos.value = '';
+
     const jsonCuerpo = {
         texto : 'Hola'
     }
@@ -235,6 +273,7 @@ async function empezarChat(idURecep) {
         const repuesta = await enviarPeticiones(url, 'POST', jsonCuerpo);
 
         if (repuesta.estado) {
+            mostrarListaMensajes(idURecep);
             verChatUsuario(idURecep);
         }
         mandarNotificacion(repuesta.message, repuesta.icono)
@@ -249,7 +288,7 @@ async function empezarChat(idURecep) {
 async function verChatUsuario(idUsuarioRecep) {
     modalAbrirNuevoChat.hide();
 
-    verChatUsuarioUrl(idUsuarioRecep);
+    verChatUsuarioUrlInicio(idUsuarioRecep);
 
     sessionStorage.setItem('chatActivo', idUsuarioRecep);
 
@@ -333,9 +372,9 @@ async function crearChatUsuario(idReceptor) {
 
 
             txtEnviar.addEventListener('click', () => {
-                verChatUsuarioUrl(idReceptor); // Llama a la función solo al hacer clic en el textarea
+                verChatUsuarioUrlInicio(idReceptor); // Llama a la función solo al hacer clic en el textarea
             });
-            
+
             // Evitar salto de línea y enviar mensaje al presionar Enter
             txtEnviar.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -366,13 +405,14 @@ async function crearChatUsuario(idReceptor) {
 }
 
 
-function verChatUsuarioUrl(idReceptor) {
+function verChatUsuarioUrlInicio(idReceptor) {
 
     const url = `amistades/verChatUsuario/${idReceptor}/`;
 
     enviarPeticiones(url, 'POST')
         .then(respuesta => {
             if (respuesta.estado) {
+                obtenerNuevosMensajes();
                 console.log('Chat abierto');
             }
         })
@@ -390,6 +430,7 @@ async function enviarMensaje(idUsuarioRecep) {
         const respuesta = await enviarPeticiones(url, 'POST', jsonCuerpo);
         if (respuesta.estado) {
             verChatUsuario(idUsuarioRecep);
+            mostrarListaMensajes(idUsuarioRecep);
         }
     } catch (error) {   
         console.log(error);
@@ -417,6 +458,60 @@ function obtenerIdDesdeURL() {
     if (idReceptor) {
         setTimeout(() => {
             mostrarListaMensajes(parseInt(idReceptor));
+            verChatUsuario(parseInt(idReceptor));
         }, 1500);
     }
 } 
+
+async function actualizarMensajesCadaMin() {
+    const chatActivo = sessionStorage.getItem('chatActivo');
+    if (chatActivo) {
+        mostrarListaMensajes(parseInt(chatActivo));
+    }else{
+        mostrarListaMensajes()
+    }
+}
+
+setInterval(actualizarMensajesCadaMin, 60000);
+
+async function buscarMensajesUsuarios() {
+    const url = `/amistades/buscarMensajesUsuarios/`;
+    const divMensajeEncontrados = document.getElementById('divMensajeEncontrados');
+    let html = '';
+    
+    const jsonCuerpo = {
+        texto : document.getElementById('inpBucarAmigos').value
+    }
+
+    try {
+        const respuesta = await enviarPeticiones(url, 'POST', jsonCuerpo);
+        if (respuesta.estado) {
+            if (respuesta.amigos == 0) {
+                divMensajeEncontrados.innerHTML = ``;
+                return;
+            }
+
+            respuesta.amigos.forEach(amigo => {
+                html += `
+                    <button type="button" class="list-group-item list-group-item-action d-flex align-items-center p-3 mb-2 rounded border-0 btn-list-custom" 
+                    aria-current="true"
+                    onclick="${amigo.existe ? `empezarChatExistente(${amigo.id})` : `empezarChat(${amigo.id})`}"
+                    >
+                        <div class="user-thumbnail me-3">
+                            <img class="img-xs rounded-circle" src="/images/perfiles/${amigo.perfil}" alt="${amigo.nombreUsuario}">
+                        </div>
+                        <div class="preview-item-content d-flex flex-column flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="preview-subject mb-0">${amigo.nombreUsuario}</h6>
+                            </div>                            
+                        </div>
+                    </button>
+                `;
+            })
+
+            divMensajeEncontrados.innerHTML = html;
+        }
+    } catch (error) {   
+        console.log(error);
+    }
+}

@@ -274,7 +274,13 @@ export class AmistadesController {
 
                     const ultimoMensaje = await this.mensajesRepository
                         .createQueryBuilder('mensajes')
-                        .select(['mensajes.texto AS texto', 'mensajes.fecha AS fecha'])
+                        .select(
+                            [
+                                'mensajes.texto AS texto',
+                                'mensajes.fecha AS fecha',
+                                'mensajes.emisorId AS emisorId'
+                            ]
+                        )
                         .where(
                             '(mensajes.emisorId = :idUsuario OR mensajes.receptorId = :idUsuario) ' +
                             'AND (mensajes.emisorId = :idReceptor OR mensajes.receptorId = :idReceptor)',
@@ -295,6 +301,8 @@ export class AmistadesController {
                         apellidos: amigo.apellidos,
                         nombreUsuario: amigo.nombreUsuario,
                         perfil: amigo.perfil,
+                        idUsuario: idUsuario,
+                        emisorId: ultimoMensaje ? ultimoMensaje.emisorId : null,
                         ultimoMensaje: textoLimitado,
                         fechaMensaje: ultimoMensaje ? formatearFechaRelativa(ultimoMensaje.fecha) : null,
                     };
@@ -628,6 +636,72 @@ export class AmistadesController {
             })
         }
     }
+    @Post('buscarMensajesUsuarios')
+    @UseGuards(JwtAuthGuard)
+    async buscarMensajesUsuarios(
+        @Req() req: any,
+        @Res() res: Response,
+        @Body() body: { texto: string }
+    ) {
+        try {
+            
+            const idUsuario = req.usuario.id;
+            const busquedaTexto = `%${body.texto}%`;
+
+            const listaAmigosQuery = await this.mensajesRepository.query(`
+                SELECT 
+                    u.id,
+                    u.nombreUsuario,
+                    u.perfil 
+                FROM 
+                    amigos a 
+                INNER JOIN 
+                    usuario u ON u.id = a.usuario2Id
+                OR 
+                    u.id = a.usuario1Id 
+                WHERE 
+                    (a.usuario1Id = ? OR a.usuario2Id = ?)
+                    AND (
+                        u.nombreUsuario LIKE ? 
+                    )
+                    AND u.id != ?;
+            `, [idUsuario, idUsuario, busquedaTexto, idUsuario]);
+            
+            const listaAmigos = await Promise.all(
+                listaAmigosQuery.map(async (amigo) => {
+
+                    const v_mensajes = await this.mensajesRepository.find({
+                        where: [
+                            { emisorId: idUsuario, receptorId: amigo.id },
+                            { emisorId: amigo.id, receptorId: idUsuario },
+                        ]
+                    });
+            
+                    // Verificar si hay mensajes entre los usuarios
+                    const existeMensaje = v_mensajes.length > 0;
+
+                    return {
+                        id: amigo.id,
+                        perfil: amigo.perfil,
+                        nombreUsuario: amigo.nombreUsuario,
+                        existe: existeMensaje
+                    };
+                })
+            );
+
+            return res.status(HttpStatus.OK).json({
+                estado: true,
+                amigos: listaAmigos,
+            });
+
+        } catch (error) {
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                estado: false,
+                message: `Error al obtener la lista de usuarios: ${error.message}`,
+            })
+        }    
+    }
+    
 }
 
 

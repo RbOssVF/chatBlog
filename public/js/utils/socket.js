@@ -11,10 +11,19 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log('Mensaje privado recibido:', mensaje);
 
         mandarNotificacion(`Nuevo mensaje: ${mensaje.texto} de: ${mensaje.usuarioEmisor}`, 'success');
+        reproducirSonidoNotificacion();
+        obtenerNuevosMensajes()
 
         const paginaInicio = sessionStorage.getItem('pagina');
+        const chatActivo = sessionStorage.getItem('chatActivo');
+
         if (paginaInicio === 'inicio') {
-            mostrarListaMensajes();
+            if (chatActivo) {
+                mostrarListaMensajes(chatActivo)
+            }
+            else {
+                mostrarListaMensajes()
+            }
         }
     });
 
@@ -26,7 +35,11 @@ document.addEventListener("DOMContentLoaded", function () {
         if (chatActivo && paginaInicio === 'inicio') {
             if (parseInt(chatActivo) === mensaje.elQuevio) {
                 console.log('entro aqui');
+                mostrarListaMensajes(mensaje.elQuevio)
                 crearChatUsuario(mensaje.elQuevio)
+            }
+            else{
+                mostrarListaMensajes(parseInt(chatActivo))
             }
         }
     });
@@ -55,7 +68,5 @@ function conectarWSIo() {
         conectarSocket(token); // Conectar al WebSocket si hay un token
     }
 }
-
-
 
 

@@ -90,3 +90,14 @@ function abriModales(idModalMandado, estado) {
         idModal.hide();
     }
 }
+
+
+async function reproducirSonidoNotificacion() {
+    try {
+        const sonido = new Audio('/sound/Diamond.mp3'); // Especifica la ruta de tu archivo de sonido
+        await sonido.play();
+        console.log("Sonido de notificación reproducido");
+    } catch (error) {
+        console.error("Error al reproducir el sonido de notificación:", error);
+    }
+}

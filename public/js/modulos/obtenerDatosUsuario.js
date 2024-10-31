@@ -215,12 +215,23 @@ function logout() {
 async function obtenerNuevosMensajes() {
     const urlServer = `amistades/nuevosMensajes/`;
     const nuevosMensajesUsuarios = document.querySelector('#nuevosMensajesUsuarios');
+    const nuevoMensajeSpan = document.querySelector('#nuevoMensajeSpan');
+
     let html = ''
     try {
-
         const respuesta = await enviarPeticiones(urlServer);
         if (respuesta.estado) {
-            
+
+            if (respuesta.mensajes.length > 0) {
+                nuevoMensajeSpan.innerHTML = `<span class="count bg-success"></span>`
+            }else{
+                nuevoMensajeSpan.innerHTML = ``
+                nuevosMensajesUsuarios.innerHTML = `<div class="text-center">
+                    <h6>No hay mensajes</h6>
+                </div>`
+                return;
+            }
+
             respuesta.mensajes.map((usuario) => {
                 html += `
                     <a class="dropdown-item preview-item" onclick="verChatUsuarioUrl(${usuario.id})">
@@ -246,17 +257,21 @@ async function obtenerNuevosMensajes() {
     }
 }
 
-function verChatUsuarioUrl(idReceptor) {
-
+async function verChatUsuarioUrl(idReceptor) {
     const url = `amistades/verChatUsuario/${idReceptor}/`;
 
-    enviarPeticiones(url, 'POST')
-        .then(respuesta => {
-            if (respuesta.estado) {
-                window.location.href = `inicio?usuario=${idReceptor}`; // Redirige con un query parameter
+    try {
+        const respuesta = await enviarPeticiones(url, 'POST');
+        if (respuesta.estado) {
+            obtenerNuevosMensajes();
+            if (window.location.pathname.includes("inicio")) {
+                mostrarListaMensajes(parseInt(idReceptor));
+                verChatUsuario(parseInt(idReceptor));
+            } else {
+                window.location.href = `inicio?usuario=${idReceptor}`;
             }
-        })
-        .catch(error => {
-            console.error(error);
-        });
+        }
+    } catch (error) {
+        console.error(error);
+    }
 }
