@@ -568,7 +568,7 @@ export class UsuarioController {
       });
   
       // Validar si g_datos_usuario existe
-      const conectado = g_datos_usuario ? g_datos_usuario.conectado : null;
+      const conectado = g_datos_usuario ? g_datos_usuario.conectado : true;
   
       // Construir el objeto de usuario a retornar
       const usuario = {

@@ -68,6 +68,15 @@ export class AmistadesController {
 
             await this.amistadRepository.save(crear_amistad);
 
+            const jsonMensaje = {
+                usuarioSolId: idUsuario,
+                usuarioRecId: g_amigo.id,
+                fechaSolicitud : new Date(),
+                message: 'Tienes una nueva solicitud',
+            }
+
+            this.websocketGateway.EnviarSolicitudUsuario(g_amigo.id, jsonMensaje);
+
             return res.status(HttpStatus.OK).json({
                 estado: true,
                 message: 'Solicitud enviada',
@@ -173,6 +182,42 @@ export class AmistadesController {
             })
         }
     }
+
+    @Post('rechazarSolicitud/:idSolicitud')
+    @UseGuards(JwtAuthGuard)
+    async rechazarSolicitud(
+        @Req() req: any,
+        @Res() res: Response,
+        @Param() amistad: { idSolicitud: number }
+    ){
+        try {
+            
+            const g_amistad = await this.amistadRepository.findOne({ where: { id: amistad.idSolicitud } });
+            if (!g_amistad) {
+                return res.status(HttpStatus.NOT_FOUND).json({
+                    estado: false,
+                    message: `La solicitud no existe`,
+                    icono: 'warning',
+                });
+            }
+
+            await this.amistadRepository.delete({ id: amistad.idSolicitud });
+
+            return res.status(HttpStatus.OK).json({
+                estado: true,
+                message: 'Solicitud rechazada correctamente',
+                icono: 'success',
+            })
+
+        } catch (error) {
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                estado: false,
+                message: 'Error al rechazar la solicitud' + error,
+                icono: 'error',
+            })
+        }
+    }
+
 
     @Get('nuevoChat')
     @UseGuards(JwtAuthGuard)

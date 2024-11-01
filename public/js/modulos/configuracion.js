@@ -1,6 +1,17 @@
+const cambiarEstadoConectado = document.querySelector('#cambiarEstadoConectado');
+const modalConfirmacionPeticiones2 = new bootstrap.Modal(document.querySelector('#modalConfirmacionPeticiones'));
+
+
 document.addEventListener("DOMContentLoaded", async function () {
     await listarAmigosConf();
+    conectarWSIo()
 })
+
+cambiarEstadoConectado.addEventListener('change', function () {
+    const estado = cambiarEstadoConectado.checked;
+    console.log(estado);
+    updateConectado(estado);
+});
 
 
 async function listarAmigosConf() {
@@ -36,8 +47,8 @@ async function listarAmigosConf() {
                                 <p class="text-muted mb-0">${amigo.estado ? 'Conectado' : 'Inactivo'}</p>
                             </div>
                             <div class="mr-auto text-sm-right pt-2 pt-sm-0">
-                                <button class="btn btn-primary btn-icon"><i class="mdi mdi-account"></i></button>
-                                <button class="btn btn-danger btn-icon"><i class="mdi mdi-trash-can"></i></button>
+                                <button class="btn btn-primary btn-icon" onclick="verPerfilAmigo(${amigo.id})"><i class="mdi mdi-account"></i></button>
+                                <button class="btn btn-danger btn-icon" onclick="borrarAmigo(${amigo.id})"><i class="mdi mdi-trash-can"></i></button>
                                 <button class="btn btn-warning btn-icon"><i class="mdi mdi-lock"></i></button>
                             </div>
                         </div>
@@ -52,7 +63,48 @@ async function listarAmigosConf() {
         html += `<div class="alert alert-danger" role="alert">
                     ${error}
                 </div>`
-    } 
+    }
+}
 
 
+function updateConectado(estado) {
+    const jsonCuerpo = {
+        estado: estado
+    }
+
+    enviarPeticiones(`../../usuarios/cambiarEstadoConectado/`, 'POST', jsonCuerpo)
+        .then(respuesta => {
+            if (respuesta.estado) {
+                obtenerDatosUsuario();
+            }
+            mandarNotificacion(respuesta.message, respuesta.icono)
+        })
+        .catch(error => {
+            console.error(error);
+        });
+    
+}
+
+
+function verPerfilAmigo(idAmigo) {
+    window.location.href = `/perfil/${idAmigo}/`;
+}
+
+async function borrarAmigo(idAmigo) {
+    const url = `../../confAmistad/borrarAmistad/${idAmigo}/`;
+    modalConfirmacionPeticiones2.show();
+    const btnConfirmar = document.getElementById('btnConfirmar');
+
+    btnConfirmar.addEventListener('click', async function () {
+        modalConfirmacionPeticiones2.hide();
+        try {
+            const respuesta = await enviarPeticiones(url, 'POST');
+            if (respuesta.estado) {
+                listarAmigosConf();
+            }
+            mandarNotificacion(respuesta.message, respuesta.icono)
+        } catch (error) {
+            mandarNotificacion('Algo salio mal', 'error')
+        }
+    })
 }

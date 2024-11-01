@@ -7,6 +7,7 @@ const socket = io('/', {
 
 
 document.addEventListener("DOMContentLoaded", function () {
+
     socket.on('mensajePrivado', (mensaje) => {
         console.log('Mensaje privado recibido:', mensaje);
 
@@ -43,6 +44,17 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }
     });
+
+    socket.on('solicitarAmistad', (mensajeSolicitud) => {
+        console.log('Solicitar amistad:', mensajeSolicitud);
+        const idUsuario = sessionStorage.getItem('usuarioId');
+
+        if (mensajeSolicitud.usuarioRecId === parseInt(idUsuario)) {
+            reproducirSonidoNotificacion();
+            mandarNotificacion(mensajeSolicitud.message, 'success');
+            obtenerSolicitudes();
+        }
+    })
 });
 
 

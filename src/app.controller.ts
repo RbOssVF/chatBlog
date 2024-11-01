@@ -1,4 +1,4 @@
-import { Controller, Get, Render, UseGuards, Res, Req } from '@nestjs/common';
+import { Controller, Get, Render, UseGuards, Res, Req, Param } from '@nestjs/common';
 import { JwtAuthGuard } from './modules/jwt/jwt-auth.guard';
 import { Response } from 'express';
 
@@ -30,5 +30,12 @@ export class AppController {
   @Render('inicio/buscarAmigos.html')  // Página de inicio
   buscarAmigos() {
     return { titulo: 'Buscar amigos'};
+  }
+
+  @Get('/perfil/:idUsuario/')
+  @UseGuards(JwtAuthGuard)  // Proteger la ruta con el guard
+  @Render('inicio/usuario/perfil.html')  // Página de perfil
+  perfil(@Param('idUsuario') idUsuario: string) {
+    return { titulo: 'Perfil', idUsuario };
   }
 }

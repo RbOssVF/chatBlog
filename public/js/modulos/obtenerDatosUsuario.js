@@ -5,10 +5,11 @@ document.addEventListener("DOMContentLoaded", function () {
     obtenerDatosUsuario();
     obtenerSolicitudes();
     obtenerNuevosMensajes();
+    conectarWSIo()
 })
 
 function obtenerDatosUsuario() {
-    const urlServer = `usuarios/obtenerUsuario/`;
+    const urlServer = `../../usuarios/obtenerUsuario/`;
     enviarPeticiones(urlServer)
         .then(respuesta => {
 
@@ -98,7 +99,7 @@ function obtenerDatosUsuario() {
 
 
 async function obtenerSolicitudes() {
-    const urlServer = `amistades/solicitudes/`;
+    const urlServer = `../../amistades/solicitudes/`;
     try {
         const respuesta = await enviarPeticiones(urlServer);
         const idNotifiHay = document.querySelector('#idNotifiHay');
@@ -150,7 +151,7 @@ async function crearListaSolicitudes() {
                                                 <p class="text-muted mb-0">${solicitud.estado ? 'Conectado' : 'Inactivo'}</p>
                                             </div>
                                             <div class="mr-auto text-sm-right pt-2 pt-sm-0">
-                                                <button class="btn btn-danger btn-icon"><i class="mdi mdi-cancel"></i></button>
+                                                <button class="btn btn-danger btn-icon" onclick="rechazarSolicitud(${solicitud.id})"><i class="mdi mdi-cancel"></i></button>
                                                 <button class="btn btn-primary btn-icon" onclick="aceptarSolicitud(${solicitud.id})"><i class="mdi mdi-check"></i></button>
                                             </div>
                                         </div>
@@ -188,6 +189,23 @@ function aceptarSolicitud(idSolicitud) {
             if (respuesta.estado) {
                 crearListaSolicitudes();
                 contruirListaAmigosChat();
+                obtenerSolicitudes();
+            }
+            mandarNotificacion(respuesta.message, respuesta.icono)
+        })
+        .catch(error => {
+            console.error(error);
+        });
+}
+
+function rechazarSolicitud(idSolicitud) {
+    const urlServer = `amistades/rechazarSolicitud/${idSolicitud}/`;
+    enviarPeticiones(urlServer, 'POST')
+        .then(respuesta => {
+            if (respuesta.estado) {
+                crearListaSolicitudes();
+                contruirListaAmigosChat();
+                obtenerSolicitudes();
             }
             mandarNotificacion(respuesta.message, respuesta.icono)
         })
@@ -213,7 +231,7 @@ function logout() {
 }
 
 async function obtenerNuevosMensajes() {
-    const urlServer = `amistades/nuevosMensajes/`;
+    const urlServer = `../../amistades/nuevosMensajes/`;
     const nuevosMensajesUsuarios = document.querySelector('#nuevosMensajesUsuarios');
     const nuevoMensajeSpan = document.querySelector('#nuevoMensajeSpan');
 
@@ -268,7 +286,7 @@ async function verChatUsuarioUrl(idReceptor) {
                 mostrarListaMensajes(parseInt(idReceptor));
                 verChatUsuario(parseInt(idReceptor));
             } else {
-                window.location.href = `inicio?usuario=${idReceptor}`;
+                window.location.href = `/inicio?usuario=${idReceptor}`;
             }
         }
     } catch (error) {

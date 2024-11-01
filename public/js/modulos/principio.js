@@ -3,7 +3,7 @@ const btnSubirImagen = document.querySelector('.file-upload-browse');
 const inpImagen = document.querySelector('.file-upload-default');
 const inpDetallesImagen = document.querySelector('.file-upload-info');
 const btnConfirmar = document.querySelector('#btnConfirmar');
-const cambiarEstadoConectado = document.querySelector('#cambiarEstadoConectado');
+
 const formularioUpdateDatos = document.querySelector('#formUpdateDatos');
 const inpBucarAmigos = document.querySelector('#inpBucarAmigos');
 
@@ -15,7 +15,8 @@ document.addEventListener("DOMContentLoaded", function () {
     sessionStorage.removeItem('chatActivo');
 
     actualizarMensajesCadaMin();
-    conectarWSIo();
+
+    conectarWSIo()
 
     // Obtener el ID del receptor desde la URL
     obtenerIdDesdeURL()
@@ -54,10 +55,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
         });
 
-        cambiarEstadoConectado.addEventListener('change', function () {
-            const estado = cambiarEstadoConectado.checked;
-            updateConectado(estado);
-        });
+        
     
         formularioUpdateDatos.addEventListener('submit', (event) => {
             event.preventDefault();
@@ -110,23 +108,6 @@ document.addEventListener("DOMContentLoaded", function () {
     
 })
 
-function updateConectado(estado) {
-    const jsonCuerpo = {
-        estado: estado
-    }
-
-    enviarPeticiones(`/usuarios/cambiarEstadoConectado/`, 'POST', jsonCuerpo)
-        .then(respuesta => {
-            if (respuesta.estado) {
-                obtenerDatosUsuario();
-            }
-            mandarNotificacion(respuesta.message, respuesta.icono)
-        })
-        .catch(error => {
-            console.error(error);
-        });
-    
-}
 
 
 async function abrirNuevoChat() {
@@ -321,7 +302,7 @@ async function crearChatUsuario(idReceptor) {
         if (respuesta.estado) {
             divDatosRecep.innerHTML = `
                 <h4 class="card-title mb-1">Chat con ${respuesta.datosRecep.nombreUsuario}</h4>
-                <a class="text-muted mb-1" href="#" type="button">Ver perfil</a>
+                <a class="text-muted mb-1" type="button" href="/perfil/${idReceptor}">Ver perfil</a>
             `;
 
             if (respuesta.mensajes.length === 0) {

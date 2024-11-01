@@ -7,8 +7,8 @@ document.addEventListener("DOMContentLoaded", function () {
     sessionStorage.setItem('pagina', 'buscarAmigos');
     sessionStorage.removeItem('chatActivo');
 
-    conectarWSIo();
     listarUsuariosBusqueda();
+    conectarWSIo()
 })
 
 function listarUsuariosBusqueda() {
