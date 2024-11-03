@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+{% include "principales/head.html" %}
+
+<style>
+  #divChatUsuario {
+    height: 430px;   /* Altura fija */
+    overflow-y: auto; /* Habilitar scroll vertical */
+  }
+
+  #divListaMensajes {
+    height: 430px;   /* Altura fija */
+    overflow-y: auto; /* Habilitar scroll vertical */
+  }
+
+</style>
+
+<body>
+    <div class="container-scroller">
+        {% include "principales/nav.html" %}
+        <div class="container-fluid page-body-wrapper">
+            {% include "principales/header.html" %}
+            <div class="main-panel">
+                <div class="content-wrapper">
+                  <div class="row">
+                    <div class="col-xl-4 col-sm-6 grid-margin stretch-card">
+                      <div class="card">
+                        <div class="card-body">
+                          <div class="row">
+                            <div class="col-9">
+                              <div class="d-flex align-items-center align-self-start">
+                                <h3 class="mb-0">Amigos activos</h3>
+                                <p class="text-success ms-2 mb-0 font-weight-medium"></p>
+                              </div>
+                            </div>
+                            <div class="col-3">
+                              <div class="icon icon-box-success">
+                                <button class="mdi mdi-arrow-bottom-left icon-item btn" id="btnVerListaConectados"></button>
+                              </div>
+                            </div>
+                          </div>
+                          <h6 class="text-muted font-weight-normal" id="txtCantidadConectados">0 conectados</h6>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-xl-4 col-sm-6 grid-margin stretch-card">
+                      <div class="card">
+                        <div class="card-body">
+                          <div class="row">
+                            <div class="col-9">
+                              <div class="d-flex align-items-center align-self-start">
+                                <h3 class="mb-0">Chats globales</h3>
+                                <p class="text-success ms-2 mb-0 font-weight-medium"></p>
+                              </div>
+                            </div>
+                            <div class="col-3">
+                              <div class="icon icon-box-success">
+                                <span class="mdi mdi-arrow-bottom-left icon-item"></span>
+                              </div>
+                            </div>
+                          </div>
+                          <h6 class="text-muted font-weight-normal">No hay mensajes nuevos</h6>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-xl-4 col-sm-6 grid-margin stretch-card">
+                      <div class="card">
+                        <div class="card-body">
+                          <div class="row">
+                            <div class="col-9">
+                              <div class="d-flex align-items-center align-self-start">
+                                <h3 class="mb-0">Buscar amigos</h3>
+                                <p class="text-success ms-2 mb-0 font-weight-medium" id="txtNuevasSugerencias"></p>
+                              </div>
+                            </div>
+                            <div class="col-3">
+                              <div class="icon icon-box-success">
+                                <a class="mdi mdi-arrow-top-right icon-item btn" href="/buscarAmigos"></a>
+                              </div>
+                            </div>
+                          </div>
+                          <h6 class="text-muted font-weight-normal" id="txtUsuarioNuevo"></h6>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-3 grid-margin stretch-card">
+                      <div class="card">
+                        <div class="card-body">
+                          <form class="d-flex flex-row justify-content-between w-100 position-relative">
+                            <input class="form-control" type="search" placeholder="Buscar mensajes" aria-label="Search" id="inpBucarAmigos">
+                            
+                          </form>
+                          <div class="list-group position-absolute card shadow rounded mt-1 col-12 p-2" id="divMensajeEncontrados"
+                              style="display: none; z-index: 1050;">
+                              <!-- Aquí se llenarán los resultados de la búsqueda -->
+                          </div>
+                          <div class="row">
+
+                            <div class="col-12">
+                              <div class="preview-list">
+                                <div class="preview-item border-bottom">
+                                  <button class="btn btn-primary btn-sm" type="button" onclick="abrirNuevoChat()">Nuevo chat</button>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div class="col-12">
+                              <div class="list-group" id="divListaMensajes">  
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-9 grid-margin stretch-card">
+                      <div class="card">
+                        <div class="card-body">
+                          <div class="d-flex flex-row justify-content-between" id="divDatosRecep">
+                          </div>
+                      
+                          <!-- Cuerpo del chat, donde se muestran los mensajes -->
+                          <div class="chat-messages mt-3 p-2" id="divChatUsuario">
+                            <div class="chat-messages mt-3 p-2 d-flex align-items-center justify-content-center">
+                              <div class="text-center">
+                                <h5 class="text-muted">Selecciona un amigo para empezar a chatear</h5>
+                                <p class="text-muted">Haz clic en un amigo de la lista para iniciar una conversación.</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="mt-2" id="divEscribirMensajes">
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- content-wrapper ends -->
+                <!-- partial:partials/_footer.html -->
+                <footer class="footer">
+                  <div class="d-sm-flex justify-content-center justify-content-sm-between">
+                    <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright © 2024 <a href="https://www.bootstrapdash.com/" target="_blank">Elena chat</a>. Todos los derechos reservados.</span>
+                    <span class="text-muted float-none float-sm-end d-block mt-1 mt-sm-0 text-center"> <span class="text-muted float-none float-sm-end d-block mt-1 mt-sm-0 text-center">Desarrollado por Ribin Os. VF <i class="mdi mdi-heart text-danger"></i></span> <i class="mdi mdi-heart text-danger"></i></span>
+                  </div>
+                </footer>
+                <!-- partial -->
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalAbrirNuevoChat" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content rounded-lg shadow-lg">
+          <div class="modal-header border-0 position-relative">
+            <div class="icon-circle bg-success text-white position-absolute top-0 start-50 translate-middle">
+              <i class="mdi mdi-chat-plus mdi-48px"></i>
+            </div>
+            <h5 class="modal-title mt-4" id="exampleModalLabel">Abrir nuevo chat</h5>
+          </div>
+          <div class="modal-body">
+            <div class="row" id="divNuevoChat">
+    
+            </div>
+          </div>
+          <div class="modal-footer border-0 justify-content-center">
+            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- plugins:js -->
+</body>
+
+{% include "principales/scripts.html" %}
+<script src="/js/modulos/principio.js"></script>
+<script src="/js/modulos/adicionalesPrincipio.js"></script>
+
+</html>

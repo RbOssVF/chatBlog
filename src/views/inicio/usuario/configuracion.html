@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+{% include "principales/head.html" %}
+
+<body>
+    <div class="container-scroller">
+        {% include "principales/nav.html" %}
+        <div class="container-fluid page-body-wrapper">
+            {% include "principales/header.html" %}
+            <div class="main-panel">
+                <div class="content-wrapper">
+
+                    <div class="row">
+                        <div class="col-md-4 grid-margin stretch-card">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-9">
+                                            <h4 class="card-title">Mis datos</h4>
+                                        </div>
+                                        <div class="col-3 d-flex justify-content-end row">
+                                            <div class="col-12 text-center" id="estadoUsuario">
+                                                
+                                            </div>
+                                            <div class="col-12 text-center">    
+                                                <div class="form-switch">  
+                                                    <input class="form-check-input" type="checkbox" id="cambiarEstadoConectado" checked>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="position-relative">
+                                        <div class="daoughnutchart-wrapper" id="perfilUsuario">
+                                            
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Subir imagen</label>
+                                            <!-- Solo permitir archivos de imagen -->
+                                            <input type="file" name="img[]" class="file-upload-default" accept="image/*">
+                                            <div class="input-group col-xs-12 d-flex align-items-center">
+                                                <input type="text" class="form-control file-upload-info" disabled
+                                                    placeholder="Seleccione una imagen">
+                                                <span class="input-group-append ms-2">
+                                                    <button class="file-upload-browse btn btn-primary"
+                                                        type="button">Elegir imagen</button>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3 col-md-12 d-flex justify-content-center" id="datosUsuario">
+                                        </div>
+                                    </div>
+
+                                    <button class="btn btn-primary"
+                                                    type="button" data-bs-toggle="modal" data-bs-target="#modalUpdateDatosUsuario">Actualizar Datos</button>
+                                    
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8 grid-margin stretch-card">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex flex-row justify-content-between">
+                                        <h4 class="card-title mb-1">Amigos</h4>
+                                        <p class="text-muted mb-1" id="textCantidadAmigos">0 amigos</p>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="preview-list" id="divListaAmigosConf">
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6 grid-margin">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5>Ultimos mensajes</h5>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="preview-list">
+                                                <div class="preview-item border-bottom">
+                                                    <div class="preview-thumbnail">
+                                                        <div class="preview-icon bg-primary">
+                                                            <i class="mdi mdi-file-document"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="preview-item-content d-sm-flex flex-grow">
+                                                        <div class="flex-grow">
+                                                            <h6 class="preview-subject">Nombre de amigo</h6>
+                                                            <p class="text-muted mb-0">Estado</p>
+                                                        </div>
+                                                        <div class="mr-auto text-sm-right pt-2 pt-sm-0">
+                                                            <button class="btn btn-danger btn-icon"><i class="mdi mdi-trash-can"></i></button>
+                                                            <button class="btn btn-primary btn-icon"><i class="mdi mdi-message"></i></button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 grid-margin">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5>Bloqueos</h5>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="preview-list">
+                                                <div class="preview-item border-bottom">
+                                                    <div class="preview-thumbnail">
+                                                        <div class="preview-icon bg-primary">
+                                                            <i class="mdi mdi-file-document"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="preview-item-content d-sm-flex flex-grow">
+                                                        <div class="flex-grow">
+                                                            <h6 class="preview-subject">Nombre de amigo</h6>
+                                                        </div>
+                                                        <div class="mr-auto text-sm-right pt-2 pt-sm-0">
+                                                            <button class="btn btn-success btn-icon"><i class="mdi mdi-account-lock-open"></i></button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- content-wrapper ends -->
+                <!-- partial:partials/_footer.html -->
+                <footer class="footer">
+                    <div class="d-sm-flex justify-content-center justify-content-sm-between">
+                        <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright © 2024 <a
+                                href="https://www.bootstrapdash.com/" target="_blank">BootstrapDash</a>. All rights
+                            reserved.</span>
+                        <span class="text-muted float-none float-sm-end d-block mt-1 mt-sm-0 text-center"> <span
+                                class="text-muted float-none float-sm-end d-block mt-1 mt-sm-0 text-center">Hand-crafted
+                                & made with <i class="mdi mdi-heart text-danger"></i></span> <i
+                                class="mdi mdi-heart text-danger"></i></span>
+                    </div>
+                </footer>
+                <!-- partial -->
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade" id="modalUpdateDatosUsuario" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-lg shadow-lg">
+                <div class="modal-header border-0 justify-content-center position-relative">
+                    <div class="icon-circle bg-primary text-white position-absolute top-0 start-50 translate-middle">
+                        <i class="mdi mdi-update mdi-48px"></i>
+                    </div>
+                    <h5 class="modal-title mt-4" id="exampleModalLabel">Actualizar Datos</h5>
+                </div>
+                <div class="modal-body text-start">
+                    <form id="formUpdateDatos">
+                        <div class="mb-3">
+                            <label for="recipient-name" class="col-form-label">Nombre:</label>
+                            <input type="text" class="form-control" id="updateNombres">
+                        </div>
+                        <div class="mb-3">
+                            <label for="recipient-name" class="col-form-label">Apellidos:</label>
+                            <input type="text" class="form-control" id="updateApellidos">
+                        </div>
+                        <div class="mb-3">
+                            <label for="recipient-name" class="col-form-label">Pais (Opcional):</label>
+                            <input type="text" class="form-control" id="updatePais">
+                        </div>
+                        <div class="mb-3">
+                            <label for="recipient-name" class="col-form-label">Fecha de Nacimiento (Opcional):</label>
+                            <input type="date" class="form-control" id="updateFechaNacimiento">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="recipient-name" class="col-form-label">Contraseña</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control p_input" id="updateClave" placeholder="Ingresa tu contraseña" aria-label="Ingresa tu contraseña">
+                                <button type="button" class="btn btn-outline-secondary" onclick="verClave('updateClave', this)">
+                                    <i class="mdi mdi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="recipient-name" class="col-form-label">Confirmar Contraseña</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control p_input" id="updateClave2" placeholder="Re-ingresa tu contraseña" aria-label="Ingresa tu contraseña">
+                                <button type="button" class="btn btn-outline-secondary" onclick="verClave('updateClave2', this)">
+                                    <i class="mdi mdi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <hr>
+                        <div class="text-end">
+                            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Confirmar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    
+    <!-- plugins:js -->
+</body>
+
+{% include "principales/scripts.html" %}
+
+<script src="/js/modulos/configuracion.js"></script>
+<script src="/js/modulos/principio.js"></script>
+
+
+</html>
