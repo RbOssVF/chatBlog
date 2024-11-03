@@ -11,14 +11,14 @@ async function bootstrap() {
 
   // Plantillas
 
-  nunjucks.configure(join(__dirname, 'views'), {
+  nunjucks.configure(join(__dirname, '..', 'src', 'views'), {
     autoescape: true,
     express: app,
   });
 
   app.useStaticAssets(join(__dirname, '..', 'public'));
 
-  app.setBaseViewsDir(join(__dirname, 'views'));
+  app.setBaseViewsDir(join(__dirname, '..', 'src', 'views'));
   app.setViewEngine('html'); // Cambia a 'html'
 
   app.useGlobalFilters(new NotFoundExceptionFilter());
