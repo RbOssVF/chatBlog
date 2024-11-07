@@ -215,19 +215,25 @@ export class UsuarioController {
       }
 
       // Generar el token JWT
-      const token = jwt.sign(
-        { id: usuario.id, email: usuario.email },  // Datos del payload del token
-        process.env.JWT_SECRET || 'nestBlog2024.', // Llave secreta
-        { expiresIn: '1h' }  // Expiración del token
+      const accessToken = jwt.sign(
+        { id: usuario.id, email: usuario.email },
+        process.env.JWT_SECRET || 'nestBlog2024.',
+        { expiresIn: '1h' }
+      );
+      const refreshToken = jwt.sign(
+        { id: usuario.id },
+        process.env.JWT_REFRESH_SECRET || 'refreshSecret',
+        { expiresIn: '7d' }
       );
 
       // Enviar el token en una cookie segura
-      res.cookie('token', token, { httpOnly: true, secure: false });  // Puedes usar secure: true en producción
+      res.cookie('token', accessToken, { httpOnly: true, secure: false });
+      res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: false });
 
       return res.status(HttpStatus.OK).json({
         estado: true,
         usuarioId: usuario.id,
-        token,  // Solo si quieres enviar también el token en el JSON (por ejemplo, para apps móviles)
+        token:accessToken,  // Solo si quieres enviar también el token en el JSON (por ejemplo, para apps móviles)
         message: `Usuario ${usuario.apellidos} ${usuario.nombres} autenticado exitosamente`,
         icono: 'success',
       });
@@ -607,6 +613,38 @@ export class UsuarioController {
       message: 'Sesión cerrada correctamente',
       icono: 'success',
     });
+  }
+
+  @Post('refreshToken')
+  async refreshToken(@Req() req: any, @Res() res: Response) {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(HttpStatus.UNAUTHORIZED).json({ error: 'No se proporcionó un token de actualización', estado: false });
+    }
+
+    try {
+      const decodedRefresh: any = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || 'refreshSecret');
+
+      // Validación si existe un `id` en el `decodedRefresh`, en caso de que no esté, lanzamos un error
+      const userId = decodedRefresh?.id || decodedRefresh?.sub;
+      if (!userId) {
+        return res.status(HttpStatus.UNAUTHORIZED).json({ error: 'Token de actualización no válido', estado: false });
+      }
+
+      // Genera un nuevo access token
+      const newAccessToken = jwt.sign(
+        { id: userId },
+        process.env.JWT_SECRET || 'nestBlog2024.',
+        { expiresIn: '1h' }
+      );
+
+      res.cookie('token', newAccessToken, { httpOnly: true });
+      return res.status(HttpStatus.OK).json({ token: newAccessToken, estado: true, message: 'Token de acceso actualizado correctamente' });
+
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Error al refrescar el token de acceso', message: error.message, estado: false });
+    }
   }
 }
 

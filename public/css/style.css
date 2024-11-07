@@ -25163,3 +25163,11 @@ dl li {
   color: #fff;
   border-color: rgba(0, 0, 0, 0.2);
 }
+
+.imagen-cuadrada{
+  width: 200px; /* Ajusta el tamaño según necesites */
+  height: 200px; /* Ajusta el tamaño según necesites */
+  object-fit: cover; /* Asegura que la imagen se ajuste bien dentro del cuadrado */
+  aspect-ratio: 1 / 1; /* Mantiene siempre la proporción cuadrada */
+  border-radius: 50%; /* Hace que la imagen tenga bordes redondeados */
+}

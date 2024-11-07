@@ -9,7 +9,7 @@ const notyf = new Notyf({
 
 const modalConfirmacionPeticiones = document.querySelector('#modalConfirmacionPeticiones');
 const confirmarModal = new bootstrap.Modal(modalConfirmacionPeticiones);
-
+const modalAbrirListaAmigos = new bootstrap.Modal(document.querySelector('#modalAbrirListaAmigos'));
 
 function mandarNotificacion(titulo, tipo) {
     if (tipo == 'warning') {
@@ -99,5 +99,49 @@ async function reproducirSonidoNotificacion() {
         console.log("Sonido de notificación reproducido");
     } catch (error) {
         console.error("Error al reproducir el sonido de notificación:", error);
+    }
+}
+
+async function refrescarToken() {
+    const url = '../../usuarios/refreshToken/';
+
+    try {
+        const respuesta = await enviarPeticiones(url, 'POST');
+
+        if (respuesta.estado) {
+            console.log('Token actualizado correctamente');
+
+            // borrar antiguo token 
+            sessionStorage.removeItem('token');
+            // Guardar el nuevo token
+            sessionStorage.setItem('token', respuesta.token);
+            // Guardar el nuevo tiempo de expiración del token
+            const newExpirationTime = Date.now() + 55 * 60 * 1000;
+            sessionStorage.setItem('tokenExpirationTime', newExpirationTime);
+
+            // Reiniciar el temporizador
+            iniciarTemporizadorToken();
+        } else {
+            console.warn('Error al refrescar el token:', respuesta);
+        }
+    } catch (error) {
+        console.error('Error al actualizar el token:', error);
+    }
+}
+
+function iniciarTemporizadorToken() {
+    const tokenExpirationTime = sessionStorage.getItem('tokenExpirationTime');
+    const tiempoRestante = tokenExpirationTime ? tokenExpirationTime - Date.now() : 0;
+
+    if (tiempoRestante > 0) {
+        const minutos = Math.floor(tiempoRestante / 60000);
+        const segundos = Math.floor((tiempoRestante % 60000) / 1000);
+        console.log(`Tiempo restante para el token: ${minutos}m ${segundos}s`);
+
+        // Configura el temporizador para refrescar el token antes de que expire
+        setTimeout(refrescarToken, Math.min(tiempoRestante, 55 * 60 * 1000));
+    } else {
+        // Si el token ya expiró, refrescar inmediatamente
+        refrescarToken();
     }
 }

@@ -10,14 +10,13 @@ const inpBucarAmigos = document.querySelector('#inpBucarAmigos');
 const modalAbrirNuevoChat = new bootstrap.Modal(document.getElementById("modalAbrirNuevoChat"));
 
 document.addEventListener("DOMContentLoaded", function () {
-
+    
     sessionStorage.setItem('pagina', 'inicio');
     sessionStorage.removeItem('chatActivo');
 
     actualizarMensajesCadaMin();
 
     conectarWSIo()
-
     // Obtener el ID del receptor desde la URL
     obtenerIdDesdeURL()
     mostrarListaMensajes();
@@ -254,8 +253,7 @@ async function empezarChat(idURecep) {
         const repuesta = await enviarPeticiones(url, 'POST', jsonCuerpo);
 
         if (repuesta.estado) {
-            mostrarListaMensajes(idURecep);
-            verChatUsuario(idURecep);
+            verChatUsuarioUrl(idURecep);
         }
         mandarNotificacion(repuesta.message, repuesta.icono)
 
@@ -268,6 +266,7 @@ async function empezarChat(idURecep) {
 
 async function verChatUsuario(idUsuarioRecep) {
     modalAbrirNuevoChat.hide();
+    modalAbrirListaAmigos.hide();
 
     verChatUsuarioUrlInicio(idUsuarioRecep);
 

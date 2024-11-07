@@ -9,6 +9,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     listarUsuariosBusqueda();
     conectarWSIo()
+
+    if (sessionStorage.getItem('token')) {
+        iniciarTemporizadorToken();
+    }
+
 })
 
 function listarUsuariosBusqueda() {
@@ -98,7 +103,7 @@ async function seleccionarUsuario(idUsuario) {
                     <div class="daoughnutchart-wrapper">
                         <img src="/images/perfiles/${respuesta.usuario.perfil}" 
                              alt="Perfil de ${respuesta.usuario.nombres}" 
-                             class=" rounded-4">
+                             class=" rounded-4 imagen-cuadrada">
                     </div>
 
                     <div class="row mt-3 mb-3 col-md-12 d-flex justify-content-center">

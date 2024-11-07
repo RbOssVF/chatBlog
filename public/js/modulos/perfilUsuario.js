@@ -5,6 +5,11 @@ document.addEventListener("DOMContentLoaded", async function () {
     await obtenerDatosPerfil()
     await obtenerListaAmigos()
     conectarWSIo()
+
+    if (sessionStorage.getItem('token')) {
+        iniciarTemporizadorToken();
+    }
+
 })
 
 async function obtenerDatosPerfil() {
@@ -21,7 +26,7 @@ async function obtenerDatosPerfil() {
         const respuesta = await enviarPeticiones(urlServer);
         if (respuesta.estado){
             
-            perfilUsuarioDatos.innerHTML = `<img class=" img-xl rounded-circle" src="/images/perfiles/${respuesta.usuario.perfil}" alt="">`
+            perfilUsuarioDatos.innerHTML = `<img class=" img-xl rounded-circle imagen-cuadrada" src="/images/perfiles/${respuesta.usuario.perfil}" alt="">`
             
             if (respuesta.usuario.conectado) {
                 estadoUsuarioPerfil.innerHTML = `<h6 class="font-weight-bold">
@@ -54,9 +59,9 @@ async function obtenerDatosPerfil() {
                 <p class="text-muted mb-0">Peru</p>
             </div>
 
-            <div class="col-md-12 d-flex justify-content-between mt-3">
-                <button class="btn btn-facebook btn-sm" onclick="eliminarAmigo(${idUsuario})">Eliminar amigo</button>
-                <button class="btn btn-behance btn-sm" onclick="bloquearAmigo(${idUsuario})">Bloquear</button>
+            <div class="col-md-12 d-flex flex-column flex-md-row justify-content-between mt-3">
+                <button class="btn btn-facebook btn-sm mb-2 mb-md-0" onclick="eliminarAmigo(${idUsuario})">Eliminar amigo</button>
+                <button class="btn btn-behance btn-sm mb-2 mb-md-0" onclick="bloquearAmigo(${idUsuario})">Bloquear</button>
                 <button class="btn btn-primary btn-sm" onclick="empezarChatAhora(${idUsuario})">Enviar mensaje</button>
             </div>`
 

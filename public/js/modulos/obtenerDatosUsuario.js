@@ -1,11 +1,20 @@
 
-
+const aVerAmigosLista = document.querySelector('#aVerAmigosLista');
 
 document.addEventListener("DOMContentLoaded", function () {
     obtenerDatosUsuario();
     obtenerSolicitudes();
     obtenerNuevosMensajes();
     conectarWSIo()
+
+    if (sessionStorage.getItem('token')) {
+        iniciarTemporizadorToken();
+    }
+
+
+    aVerAmigosLista.addEventListener('click', function () {
+        crearListaAmigosNav();
+    })
 })
 
 function obtenerDatosUsuario() {
@@ -51,7 +60,7 @@ function obtenerDatosUsuario() {
                 if (datosUsuario && estadoUsuario && cambiarEstadoConectado && perfilUsuario) {
 
                     cambiarEstadoConectado.checked = respuesta.usuario.conectado;
-                    perfilUsuario.innerHTML = `<img class=" img-xl rounded-circle" src="${usuarioPerfilGlobal}" alt="">`
+                    perfilUsuario.innerHTML = `<img class=" img-xl rounded-circle imagen-cuadrada" src="${usuarioPerfilGlobal}" alt="">`
 
                     if (respuesta.usuario.conectado == true) {
                         estadoUsuario.innerHTML = `<h6 class="font-weight-bold">
@@ -291,5 +300,63 @@ async function verChatUsuarioUrl(idReceptor) {
         }
     } catch (error) {
         console.error(error);
+    }
+}
+
+
+async function crearListaAmigosNav() {
+    modalAbrirListaAmigos.show();
+    const url = '../../confAmistad/listaUsuariosConectados';
+    let html = ''
+    const divListaAmigosHeader = document.querySelector('#divListaAmigosHeader');
+
+    try {
+        
+        const respuesta = await enviarPeticiones(url);
+        if (respuesta.estado) {
+            
+            if (respuesta.listaConectados.length === 0) {
+                divListaAmigosHeader.innerHTML = `
+                    <div class="text-center">
+                        <h6>No hay conectados</h6>
+                    </div>
+                `;
+                return;
+            }
+
+            respuesta.listaConectados.map((amigo) => {
+                html += `
+                <div class="col-12">
+                        <div class="preview-list">
+                            <div class="preview-item border-bottom">
+                                <div class="preview-thumbnail">
+                                    <img class="rounded-3" src="/images/perfiles/${amigo.perfil}" alt="image">
+                                </div>
+                                <div class="preview-item-content d-sm-flex flex-grow">
+                                    <div class="flex-grow">
+                                        <h6 class="preview-subject">${amigo.nombreUsuario}</h6>
+                                        <p class="text-muted mb-0">${amigo.estado ? 'Conectado' : 'Inactivo'}</p>
+                                    </div>
+                                    <div class="mr-auto text-sm-right pt-2 pt-sm-0">
+                                        ${amigo.existe ? 
+                                            `<button class="btn btn-success btn-icon" onclick="verChatUsuarioUrl(${amigo.id})"><i class="mdi mdi-message-text-outline"></i></button>` : 
+                                            `<button class="btn btn-warning btn-icon" onclick="empezarChat(${amigo.id})"><i class="mdi mdi-human-greeting"></i></button>`}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            });
+
+            divListaAmigosHeader.innerHTML = html;
+        }
+
+    } catch (error) {
+        divListaAmigosHeader.innerHTML = `
+            <div class="text-center">
+                <h6>No hay conectados</h6>
+            </div>
+        `
     }
 }

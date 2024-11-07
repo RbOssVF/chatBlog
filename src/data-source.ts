@@ -1,13 +1,16 @@
 import { DataSource } from 'typeorm';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 export const AppDataSource = new DataSource({
   type: 'mysql',
-  host: '192.168.1.50',
-  port: 3306,
-  username: 'rbhome',
-  password: '$817W`Vg3{U|',
-  database: 'blogCole',
+  host: process.env.DATABASE_HOST, 
+  port: parseInt(process.env.DATABASE_PORT, 10),
+  username: process.env.DATABASE_USER,
+  password: process.env.DATABASE_PASSWORD,
+  database: process.env.DATABASE_NAME,
   entities: [__dirname + '/**/*.entity{.ts,.js}'],
-  migrations: ['src/migration/*.ts'], // Ruta de las migraciones
-  synchronize: false, // Debe ser false en producción para usar migraciones
+  migrations: ['src/migration/*.ts'],    // Ruta de las migraciones
+  synchronize: false, 
 });

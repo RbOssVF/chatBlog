@@ -6,7 +6,7 @@ const fromRegistro = document.getElementById('formRegistro');
 document.addEventListener("DOMContentLoaded", function () {
 
     // eliminar todo el localStorage
-    localStorage.clear();
+    sessionStorage.clear();
 
     // mandarNotificacion('Hola', 'error')
     fromLogin.addEventListener('submit', (event) => {
@@ -32,6 +32,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     sessionStorage.setItem('token', respuesta.token);
                     sessionStorage.setItem('usuarioId', respuesta.usuarioId);
+
+                    const expirationTime = Date.now() + 55 * 60 * 1000; 
+                    sessionStorage.setItem('tokenExpirationTime', expirationTime);
+
+                    iniciarTemporizadorToken();
 
                     window.location.href = '/inicio';
                 }

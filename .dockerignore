@@ -1,0 +1,8 @@
+node_modules
+dist
+.git
+.gitignore
+Dockerfile
+.dockerignore
+README.md
+.env  # Asegúrate de no incluir el archivo .env en la imagen para evitar exponer credenciales

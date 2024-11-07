@@ -208,5 +208,119 @@ export class ConfAmistadController {
         }
     }
 
+    @Get('listaUsuariosConectados')
+    @UseGuards(JwtAuthGuard)
+    async getUsuariosConectados(
+        @Req() req: any,
+        @Res() res: Response,
+    ){
+        try {
+            
+            const idUsuario = req.usuario.id;
+
+            const listaConectadosQuery = await this.amigosRepository
+                .createQueryBuilder('a') // Alias 'a' para 'amigos'
+                .select([
+                    'u.id AS id',
+                    'u.nombreUsuario AS nombreUsuario',
+                    'u.perfil AS perfil',
+                    'COALESCE(du.conectado, 1) AS conectado'
+                ])
+                .innerJoin('usuario', 'u', '(u.id = a.usuario2Id OR u.id = a.usuario1Id)')
+                .innerJoin('datosUsuario', 'du', '(du.usuarioId = a.usuario1Id OR du.usuarioId = a.usuario2Id)')
+                .where('(a.usuario1Id = :userId OR a.usuario2Id = :userId)', { userId: idUsuario })
+                .andWhere('u.id != :userId', { userId: idUsuario })
+                .orderBy('conectado', 'DESC') // Referencia 'conectado' en lugar de COALESCE(du.conectado, 1)
+                .getRawMany();
+
+            const listaConectados = await Promise.all(
+                listaConectadosQuery.map(async (amigo) => {
+
+                    const v_mensajes = await this.mensajesRepository.find({
+                        where: [
+                            { emisorId: idUsuario, receptorId: amigo.id },
+                            { emisorId: amigo.id, receptorId: idUsuario },
+                        ]
+                    });
+            
+                    // Verificar si hay mensajes entre los usuarios
+                    const existeMensaje = v_mensajes.length > 0;
+
+                    return {
+                        id: Number(amigo.id),
+                        nombreUsuario: amigo.nombreUsuario,
+                        perfil: amigo.perfil,
+                        estado: amigo.conectado,
+                        existe: existeMensaje
+                    };
+                })
+            );
+
+            return res.status(HttpStatus.OK).json({
+                estado: true,
+                message: 'Usuarios conectados',
+                listaConectados
+            })
+
+        } catch (error) {
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                estado: false,
+                message: `Error al enviar la solicitud: ${error}`,
+            })
+        }
+    }
+
+    @Get('nuevosUsuariosRegistrado')
+    @UseGuards(JwtAuthGuard)
+    async obtenerNuevoUsuarioRegistrado(
+        @Req() req: any,
+        @Res() res: Response,
+    ){
+        try {
+
+            const userId = req.usuario.id;
+
+            const listaNuevosUsuariosQuery = await this.usuarioRepository
+                .createQueryBuilder('u')
+                .select([
+                    'u.id AS id',
+                    'u.nombreUsuario AS nombreUsuario',
+                    'u.perfil AS perfil',
+                    `COALESCE((SELECT du.conectado FROM datosUsuario du WHERE du.usuarioId = u.id), 1) AS conectado`
+                ])
+                .where('u.id != :userId', { userId })
+                .andWhere(qb => {
+                    const subQueryAmigos = qb.subQuery()
+                        .select('CASE WHEN a.usuario1Id = :userId THEN a.usuario2Id ELSE a.usuario1Id END')
+                        .from('amigos', 'a')
+                        .where('a.usuario1Id = :userId OR a.usuario2Id = :userId')
+                        .getQuery();
+
+                    const subQueryAmistades = qb.subQuery()
+                        .select('CASE WHEN a2.usuarioSolid = :userId THEN a2.usuarioRecId ELSE a2.usuarioSolid END')
+                        .from('amistades', 'a2')
+                        .where('a2.usuarioSolid = :userId OR a2.usuarioRecId = :userId')
+                        .getQuery();
+
+                    return `u.id NOT IN ${subQueryAmigos} AND u.id NOT IN ${subQueryAmistades}`;
+                })
+                .setParameter('userId', userId)
+                .orderBy('u.fechaCreacion', 'DESC')
+                .limit(3)  // Limita los resultados a 3 filas
+                .getRawMany();
+
+            return res.status(HttpStatus.OK).json({
+                estado: true,
+                listaNuevosUsuarios: listaNuevosUsuariosQuery
+            })
+            
+        } catch (error) {
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                estado: false,
+                message: `Error al enviar la solicitud: ${error}`,
+            })
+        }
+    }
+
 }
 

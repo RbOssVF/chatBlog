@@ -5,6 +5,11 @@ const modalConfirmacionPeticiones2 = new bootstrap.Modal(document.querySelector(
 document.addEventListener("DOMContentLoaded", async function () {
     await listarAmigosConf();
     conectarWSIo()
+    
+    if (sessionStorage.getItem('token')) {
+        iniciarTemporizadorToken();
+    }
+
 })
 
 cambiarEstadoConectado.addEventListener('change', function () {

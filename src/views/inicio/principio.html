@@ -29,17 +29,17 @@
                           <div class="row">
                             <div class="col-9">
                               <div class="d-flex align-items-center align-self-start">
-                                <h3 class="mb-0">Chat personales</h3>
+                                <h3 class="mb-0">Amigos activos</h3>
                                 <p class="text-success ms-2 mb-0 font-weight-medium"></p>
                               </div>
                             </div>
                             <div class="col-3">
-                              <div class="icon icon-box-success ">
-                                <span class="mdi mdi-arrow-bottom-left icon-item"></span>
+                              <div class="icon icon-box-success">
+                                <button class="mdi mdi-arrow-bottom-left icon-item btn" id="btnVerListaConectados"></button>
                               </div>
                             </div>
                           </div>
-                          <h6 class="text-muted font-weight-normal">No hay mensajes nuevos</h6>
+                          <h6 class="text-muted font-weight-normal" id="txtCantidadConectados">0 conectados</h6>
                         </div>
                       </div>
                     </div>
@@ -70,16 +70,16 @@
                             <div class="col-9">
                               <div class="d-flex align-items-center align-self-start">
                                 <h3 class="mb-0">Buscar amigos</h3>
-                                <p class="text-success ms-2 mb-0 font-weight-medium">5 nuevas sugerencias</p>
+                                <p class="text-success ms-2 mb-0 font-weight-medium" id="txtNuevasSugerencias"></p>
                               </div>
                             </div>
                             <div class="col-3">
                               <div class="icon icon-box-success">
-                                <span class="mdi mdi-arrow-top-right icon-item"></span>
+                                <a class="mdi mdi-arrow-top-right icon-item btn" href="/buscarAmigos"></a>
                               </div>
                             </div>
                           </div>
-                          <h6 class="text-muted font-weight-normal">Laura se acaba de unir</h6>
+                          <h6 class="text-muted font-weight-normal" id="txtUsuarioNuevo"></h6>
                         </div>
                       </div>
                     </div>
@@ -152,29 +152,30 @@
 
     <div class="modal fade" id="modalAbrirNuevoChat" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
       <div class="modal-dialog">
-          <div class="modal-content rounded-lg shadow-lg">
-              <div class="modal-header border-0 position-relative">
-                  <div class="icon-circle bg-success text-white position-absolute top-0 start-50 translate-middle">
-                      <i class="mdi mdi-chat-plus mdi-48px"></i>
-                  </div>
-                  <h5 class="modal-title mt-4" id="exampleModalLabel">Abrir nuevo chat</h5>
-              </div>
-              <div class="modal-body">
-                  <div class="row" id="divNuevoChat">
-                      
-                  </div>
-              </div>
-              <div class="modal-footer border-0 justify-content-center">
-                  <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
-              </div>
+        <div class="modal-content rounded-lg shadow-lg">
+          <div class="modal-header border-0 position-relative">
+            <div class="icon-circle bg-success text-white position-absolute top-0 start-50 translate-middle">
+              <i class="mdi mdi-chat-plus mdi-48px"></i>
+            </div>
+            <h5 class="modal-title mt-4" id="exampleModalLabel">Abrir nuevo chat</h5>
           </div>
+          <div class="modal-body">
+            <div class="row" id="divNuevoChat">
+    
+            </div>
+          </div>
+          <div class="modal-footer border-0 justify-content-center">
+            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+          </div>
+        </div>
       </div>
-  </div>
+    </div>
 
     <!-- plugins:js -->
 </body>
 
 {% include "principales/scripts.html" %}
 <script src="/js/modulos/principio.js"></script>
+<script src="/js/modulos/adicionalesPrincipio.js"></script>
 
 </html>
